@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  email      String    @unique
+  role       String
+  expenses   Expense[] @relation("ExpenseApprover")
+}
+
+model ClientVendor {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  type        String
+  email       String?
+  phone       String?
+  proposals   Proposal[]
+  invoices    Invoice[]
+  expenses    Expense[]
+}
+
+model Proposal {
+  id             String         @id @default(uuid()) @db.Uuid
+  clientId       String         @db.Uuid
+  proposalNumber String         @unique
+  status         String
+  totalAmount    Decimal        @db.Decimal(18,2)
+  validUntil     DateTime       @db.Date
+  client         ClientVendor   @relation(fields: [clientId], references: [id])
+  items          ProposalItem[]
+  invoice        Invoice?
+}
+
+model ProposalItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  proposalId  String   @db.Uuid
+  description String
+  qty         Int
+  unitPrice   Decimal  @db.Decimal(18,2)
+  proposal    Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id            String         @id @default(uuid()) @db.Uuid
+  clientId      String         @db.Uuid
+  proposalId    String?        @unique @db.Uuid
+  invoiceNumber String         @unique
+  status        String
+  dueDate       DateTime       @db.Date
+  totalAmount   Decimal        @db.Decimal(18,2)
+  client        ClientVendor   @relation(fields: [clientId], references: [id])
+  proposal      Proposal?      @relation(fields: [proposalId], references: [id])
+  items         InvoiceItem[]
+  payments      Payment[]
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  invoiceId   String   @db.Uuid
+  description String
+  qty         Int
+  unitPrice   Decimal  @db.Decimal(18,2)
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String       @id @default(uuid()) @db.Uuid
+  invoiceId   String       @db.Uuid
+  amount      Decimal      @db.Decimal(18,2)
+  paymentDate DateTime     @db.Date
+  method      String
+  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  cashflow    CashflowTransaction[]
+}
+
+model Expense {
+  id         String       @id @default(uuid()) @db.Uuid
+  vendorId   String       @db.Uuid
+  approvedBy String?      @db.Uuid
+  category   String
+  amount     Decimal      @db.Decimal(18,2)
+  expenseDate DateTime     @db.Date
+  status     String
+  vendor     ClientVendor @relation(fields: [vendorId], references: [id])
+  approver   User?        @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  cashflow   CashflowTransaction[]
+}
+
+model CashflowTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  type            String
+  category        String
+  amount          Decimal   @db.Decimal(18,2)
+  transactionDate DateTime  @db.Date
+  sourceRef       String?
+  paymentId       String?   @db.Uuid
+  expenseId       String?   @db.Uuid
+  payment         Payment?  @relation(fields: [paymentId], references: [id])
+  expense         Expense?  @relation(fields: [expenseId], references: [id])
+}
+
+model Budget {
+  id            String   @id @default(uuid()) @db.Uuid
+  category      String
+  period        String
+  plannedAmount Decimal  @db.Decimal(18,2)
+}
