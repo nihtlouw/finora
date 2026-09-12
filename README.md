@@ -1,38 +1,65 @@
-# Finora — Platform Keuangan Startup
+# Finora — Stabilization & UX v1
 
-Prototype web interaktif yang dibangun dari briefing teknis dan ERD yang diberikan.
+Tahap ini merapikan authentication/session behavior dan experience layer sebelum modul transaksi production dibangun.
 
-## Cara menjalankan
+## Yang berubah
 
-Paling sederhana: buka `index.html` langsung di browser modern.
+- User baru **tidak otomatis menjadi OWNER**.
+- Role OWNER hanya diberikan kepada email atau Clerk user ID yang terdaftar pada environment bootstrap.
+- Existing OWNER yang tidak termasuk daftar bootstrap akan diturunkan menjadi VIEWER saat sesi Finora berikutnya dimuat.
+- Menu profil sekarang memiliki status sesi, reset data demo, dan logout.
+- Notification bell memiliki popover yang lebih informatif.
+- Ada penanda `Development · Data demo` agar batas prototype vs production jelas.
+- Greeting dan tanggal dashboard mengikuti waktu aplikasi, bukan hard-coded.
+- Nama berbasis email diringkas agar sidebar/header tetap rapi.
+- Fokus keyboard, popover, mobile spacing, dan visual session state dipoles.
 
-Atau gunakan server lokal:
+## Environment tambahan
 
-```bash
-python3 -m http.server 8080
+Tambahkan ke `.env`/`.env.local`:
+
+```env
+FINORA_OWNER_EMAILS=owner@example.com
+FINORA_OWNER_CLERK_IDS=
+FINORA_TIMEZONE=Asia/Jakarta
 ```
 
-Lalu buka `http://localhost:8080`.
+**Penting:** untuk menjadikan akun Clerk Anda sebagai Owner, masukkan email akun tersebut ke `FINORA_OWNER_EMAILS`. Jangan menggunakan mekanisme "user pertama = owner".
 
-## Yang sudah dieksekusi
+## Local development
 
-- Dashboard finansial: saldo kas, pendapatan, pengeluaran, piutang jatuh tempo, cashflow chart, financial health.
-- Proposal: daftar proposal, status, pembuatan proposal baru, dan convert proposal diterima menjadi invoice.
-- Invoice: daftar invoice, filter/search, tandai lunas, dan sinkron ke cash flow.
-- Cash Flow: transaksi otomatis/manual dengan sumber dari invoice & biaya.
-- Biaya Operasional: input biaya, approval threshold, dan feed cash flow.
-- Klien & Vendor: master data yang dipakai di proposal/invoice/biaya.
-- Budgeting: budget vs actual dan alert kategori yang mendekati limit.
-- Laporan Keuangan: ringkasan laba rugi, perbandingan periode, AI insight.
-- AI Assistant: Q&A berbasis data demo + smart follow-up, document AI, rekonsiliasi, forecasting.
-- Pengaturan: profil bisnis, approval, audit log, reminder, payment gateway.
-- LocalStorage: perubahan data demo dipertahankan di browser.
-- Responsive untuk desktop, tablet, dan mobile.
+```bash
+npm install
+npm run db:generate
+npm run dev
+```
 
-## Pemetaan ERD
+Untuk logout, gunakan menu profil di pojok kanan atas → `Keluar`.
 
-Prototype mengikuti entitas utama: `USERS`, `CLIENTS_VENDORS`, `PROPOSALS`, `PROPOSAL_ITEMS`, `INVOICES`, `INVOICE_ITEMS`, `PAYMENTS`, `EXPENSES`, `CASHFLOW_TRANSACTIONS`, dan `BUDGETS`.
+Untuk menguji akun lain:
 
-## Tahap produksi
+1. Logout dari Finora.
+2. Buka `/sign-in`.
+3. Login dengan akun Clerk lain.
+4. Akun baru akan menjadi `VIEWER` kecuali email/Clerk ID sudah diizinkan pada `FINORA_OWNER_EMAILS` / `FINORA_OWNER_CLERK_IDS`.
 
-Frontend prototype ini sengaja tidak mengklaim telah memiliki backend production. Untuk implementasi sesuai rekomendasi teknis, langkah berikutnya adalah memindahkan state demo ke Next.js App Router + Prisma/Drizzle + Neon Postgres, menambahkan auth/role-based access, Vercel Blob, job scheduler, payment gateway webhook, audit log, dan provider OCR/LLM.
+## Data demo
+
+Modul UI yang belum terhubung ke backend masih menggunakan state browser untuk kebutuhan prototyping. Badge `Development · Data demo` dibuat sengaja supaya pengguna tidak salah menganggap tombol prototype sebagai transaksi produksi.
+
+`Reset data demo` menghapus key `finora_state` dari `localStorage` lalu memuat ulang aplikasi.
+
+## Checkpoint
+
+Setelah tahap ini:
+
+- Next.js ✅
+- Clerk ✅
+- Prisma ✅
+- Neon ✅
+- User sync ✅
+- Session/logout UX ✅
+- Role bootstrap hardening ✅
+- UI stabilization v1 ✅
+
+Tahap bisnis berikutnya tetap: Clients & Vendors → Proposal → Invoice → Payment → Cash Flow.

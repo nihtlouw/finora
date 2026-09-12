@@ -1,18 +1,21 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
   id         String    @id @default(uuid()) @db.Uuid
-  name       String
+  clerkId    String    @unique
+  name       String?
   email      String    @unique
-  role       String
+  role       String    @default("VIEWER")
   expenses   Expense[] @relation("ExpenseApprover")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model ClientVendor {
@@ -24,6 +27,8 @@ model ClientVendor {
   proposals   Proposal[]
   invoices    Invoice[]
   expenses    Expense[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Proposal {
@@ -36,6 +41,8 @@ model Proposal {
   client         ClientVendor   @relation(fields: [clientId], references: [id])
   items          ProposalItem[]
   invoice        Invoice?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model ProposalItem {
@@ -59,6 +66,8 @@ model Invoice {
   proposal      Proposal?      @relation(fields: [proposalId], references: [id])
   items         InvoiceItem[]
   payments      Payment[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model InvoiceItem {
@@ -71,26 +80,29 @@ model InvoiceItem {
 }
 
 model Payment {
-  id          String       @id @default(uuid()) @db.Uuid
-  invoiceId   String       @db.Uuid
-  amount      Decimal      @db.Decimal(18,2)
-  paymentDate DateTime     @db.Date
+  id          String                @id @default(uuid()) @db.Uuid
+  invoiceId   String                @db.Uuid
+  amount      Decimal               @db.Decimal(18,2)
+  paymentDate DateTime              @db.Date
   method      String
-  invoice     Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice     Invoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   cashflow    CashflowTransaction[]
+  createdAt   DateTime              @default(now())
 }
 
 model Expense {
-  id         String       @id @default(uuid()) @db.Uuid
-  vendorId   String       @db.Uuid
-  approvedBy String?      @db.Uuid
-  category   String
-  amount     Decimal      @db.Decimal(18,2)
-  expenseDate DateTime     @db.Date
-  status     String
-  vendor     ClientVendor @relation(fields: [vendorId], references: [id])
-  approver   User?        @relation("ExpenseApprover", fields: [approvedBy], references: [id])
-  cashflow   CashflowTransaction[]
+  id          String                @id @default(uuid()) @db.Uuid
+  vendorId    String                @db.Uuid
+  approvedBy  String?               @db.Uuid
+  category    String
+  amount      Decimal               @db.Decimal(18,2)
+  expenseDate DateTime              @db.Date
+  status      String
+  vendor      ClientVendor          @relation(fields: [vendorId], references: [id])
+  approver    User?                 @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  cashflow    CashflowTransaction[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
 }
 
 model CashflowTransaction {
@@ -104,6 +116,7 @@ model CashflowTransaction {
   expenseId       String?   @db.Uuid
   payment         Payment?  @relation(fields: [paymentId], references: [id])
   expense         Expense?  @relation(fields: [expenseId], references: [id])
+  createdAt       DateTime  @default(now())
 }
 
 model Budget {
@@ -111,4 +124,6 @@ model Budget {
   category      String
   period        String
   plannedAmount Decimal  @db.Decimal(18,2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
