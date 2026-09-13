@@ -1,27 +1,17 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../../generated/prisma/client";
+import { normalizePostgresConnectionUrl } from "./postgres-url";
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined };
 const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not configured.");
-}
+if (!connectionString) throw new Error("DATABASE_URL is not configured.");
 
 const adapter = new PrismaPg({
-  connectionString,
+  connectionString: normalizePostgresConnectionUrl(connectionString),
   max: 10,
   connectionTimeoutMillis: 10_000,
   idleTimeoutMillis: 10_000,
 });
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({ adapter });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

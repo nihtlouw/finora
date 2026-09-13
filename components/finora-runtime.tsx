@@ -59,6 +59,13 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
 
     const onDocumentClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null
+      const navItem = target?.closest<HTMLElement>('[data-view="clients"]')
+      if (navItem) {
+        event.preventDefault()
+        event.stopPropagation()
+        window.location.href = '/clients'
+        return
+      }
       if (!target?.closest('[data-finora-runtime-popover]') && !target?.closest('#userMenuBtn')) {
         setUserMenuOpen(false)
       }
@@ -67,13 +74,13 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
       }
     }
 
-    document.addEventListener('click', onDocumentClick)
+    document.addEventListener('click', onDocumentClick, true)
 
     return () => {
       cancelled = true
       if (timer) clearTimeout(timer)
       cleanup?.()
-      document.removeEventListener('click', onDocumentClick)
+      document.removeEventListener('click', onDocumentClick, true)
       delete window.__FINORA_MANAGED_USER_MENU__
     }
   }, [])

@@ -1,9 +1,2 @@
 import { SignUp } from '@clerk/nextjs'
-
-export default function SignUpPage() {
-  return (
-    <main className="min-h-screen flex items-center justify-center bg-[#f7f8f6] px-4 py-8">
-      <SignUp />
-    </main>
-  )
-}
+export default function SignUpPage(){return <main style={{minHeight:'100vh',display:'grid',gridTemplateColumns:'1fr 1fr',background:'#f4faf8'}}><div style={{background:'linear-gradient(160deg,#043e3a,#0d6f62)',color:'white',padding:'12vw 10vw',display:'flex',flexDirection:'column',justifyContent:'center'}}><div style={{fontSize:42,fontWeight:900}}>Finora</div><p style={{fontSize:22,maxWidth:480}}>Bangun kontrol finansial yang rapi sejak hari pertama.</p><p style={{opacity:.75,maxWidth:480}}>Buat workspace dan mulai kelola klien, proposal, invoice, biaya, dan cash flow Anda.</p></div><div style={{display:'grid',placeItems:'center',padding:24}}><SignUp routing="path" path="/sign-up" signInUrl="/sign-in" /></div></main>}
