@@ -1,0 +1,7 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db/prisma'
+import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-user'
+import { nonNegativeMoney, requireText } from '@/lib/validation/finance'
+export const dynamic='force-dynamic'
+export async function GET(){const c=await getCurrentFinoraContext();if(!c)return NextResponse.json({error:'Unauthenticated'},{status:401});const rows=await prisma.employee.findMany({where:{workspaceId:c.workspace.id},orderBy:{name:'asc'}});return NextResponse.json({employees:rows})}
+export async function POST(req:Request){const c=await getCurrentFinoraContext();if(!c)return NextResponse.json({error:'Unauthenticated'},{status:401});if(!canManageFinance(c.user.role))return NextResponse.json({error:'Tidak memiliki akses.'},{status:403});try{const b=await req.json();const salary=nonNegativeMoney(b.baseSalary??0,'Gaji pokok').decimal;const row=await prisma.employee.create({data:{workspaceId:c.workspace.id,employeeNo:requireText(b.employeeNo,'NIK/nomor karyawan',80),name:requireText(b.name,'Nama karyawan',150),email:b.email?String(b.email).trim():null,taxId:b.taxId?String(b.taxId).trim():null,maritalStatus:b.maritalStatus?String(b.maritalStatus).trim():null,baseSalary:salary,bankName:b.bankName?String(b.bankName).trim():null,bankAccount:b.bankAccount?String(b.bankAccount).trim():null,isActive:b.isActive!==false}});return NextResponse.json({employee:row},{status:201})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Gagal membuat karyawan.'},{status:400})}}

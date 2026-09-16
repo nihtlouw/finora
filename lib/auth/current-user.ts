@@ -31,41 +31,68 @@ function slugify(value: string) {
     .slice(0, 48) || 'workspace'
 }
 
-async function getOrCreateWorkspace(userId: string, userName: string, userRole: FinoraRole) {
+async function getOrCreateWorkspace(userId: string, userName: string, configuredOwner: boolean) {
   const membership = await prisma.workspaceMember.findFirst({
     where: { userId },
     include: { workspace: true },
+    orderBy: { createdAt: 'asc' },
   })
 
+  // IMPORTANT: once a membership exists, WorkspaceMember.role is the source
+  // of truth. The bootstrap environment variable is only for first-time setup.
   if (membership) {
-    const desiredRole = userRole
-    if (membership.role !== desiredRole) {
-      return prisma.workspaceMember.update({
-        where: { id: membership.id },
-        data: { role: desiredRole },
-        include: { workspace: true },
+    if (configuredOwner && membership.role !== 'OWNER') {
+      const existingOwner = await prisma.workspaceMember.findFirst({
+        where: { workspaceId: membership.workspaceId, role: 'OWNER' },
+        select: { id: true },
       })
+      // Bootstrap may claim an ownerless workspace exactly once. Once any
+      // owner exists, email/env can no longer override WorkspaceMember.role.
+      if (!existingOwner) {
+        return prisma.$transaction(async (tx) => {
+          const updated = await tx.workspaceMember.update({
+            where: { id: membership.id },
+            data: { role: 'OWNER' },
+            include: { workspace: true },
+          })
+          await tx.user.update({ where: { id: userId }, data: { role: 'OWNER' } })
+          return updated
+        })
+      }
     }
     return membership
   }
 
+  const role: FinoraRole = configuredOwner ? 'OWNER' : 'VIEWER'
   const base = slugify(`${userName}-workspace`)
   const suffix = userId.slice(-8).toLowerCase()
-  const slug = `${base}-${suffix}`.slice(0, 63)
+  const slugBase = `${base}-${suffix}`.slice(0, 63)
 
-  return prisma.workspaceMember.create({
-    data: {
-      role: userRole,
-      user: { connect: { id: userId } },
-      workspace: {
-        create: {
-          name: `${userName} Workspace`,
-          slug,
+  try {
+    return await prisma.workspaceMember.create({
+      data: {
+        role,
+        user: { connect: { id: userId } },
+        workspace: {
+          create: {
+            name: `${userName} Workspace`,
+            slug: slugBase,
+          },
         },
       },
-    },
-    include: { workspace: true },
-  })
+      include: { workspace: true },
+    })
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
+      const existingAfterRace = await prisma.workspaceMember.findFirst({
+        where: { userId },
+        include: { workspace: true },
+        orderBy: { createdAt: 'asc' },
+      })
+      if (existingAfterRace) return existingAfterRace
+    }
+    throw error
+  }
 }
 
 export async function getCurrentFinoraContext() {
@@ -89,14 +116,10 @@ export async function getCurrentFinoraContext() {
 
   let user
   if (existing) {
-    const nextRole: FinoraRole = configuredOwner
-      ? 'OWNER'
-      : existing.role === 'OWNER'
-        ? 'VIEWER'
-        : normalizeRole(existing.role)
-
-    user = existing.name !== name || existing.email !== email || existing.role !== nextRole
-      ? await prisma.user.update({ where: { id: existing.id }, data: { name, email, role: nextRole } })
+    // Do not derive an existing user's role from email/environment.
+    // WorkspaceMember.role remains authoritative.
+    user = existing.name !== name || existing.email !== email
+      ? await prisma.user.update({ where: { id: existing.id }, data: { name, email } })
       : existing
   } else {
     user = await prisma.user.create({
@@ -109,10 +132,14 @@ export async function getCurrentFinoraContext() {
     })
   }
 
-  const role = normalizeRole(user.role)
-  const membership = await getOrCreateWorkspace(user.id, name, role)
+  const membership = await getOrCreateWorkspace(user.id, name, configuredOwner)
+  const effectiveRole = normalizeRole(membership.role)
+  if (user.role !== effectiveRole) {
+    user = await prisma.user.update({ where: { id: user.id }, data: { role: effectiveRole } })
+  }
+  const effectiveUser = { ...user, role: effectiveRole }
 
-  return { user, workspace: membership.workspace, membership }
+  return { user: effectiveUser, workspace: membership.workspace, membership }
 }
 
 export async function getCurrentFinoraUser() {
@@ -144,4 +171,12 @@ export function canManageClients(role: string) {
 
 export function canDeleteClients(role: string) {
   return ['OWNER', 'FINANCE'].includes(normalizeRole(role))
+}
+
+export function canManageFinance(role: string) {
+  return ['OWNER', 'FINANCE'].includes(normalizeRole(role))
+}
+
+export function canManageSales(role: string) {
+  return ['OWNER', 'FINANCE', 'SALES'].includes(normalizeRole(role))
 }

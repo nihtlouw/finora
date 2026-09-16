@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { canManageClients, getCurrentFinoraContext } from '@/lib/auth/current-user'
 import { validateClientVendorPayload } from '@/lib/validation/client-vendor'
+import { writeAuditLog } from '@/lib/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,8 @@ export async function GET(request: Request) {
               { email: { contains: search, mode: 'insensitive' } },
               { picName: { contains: search, mode: 'insensitive' } },
               { phone: { contains: search, mode: 'insensitive' } },
+              { category: { contains: search, mode: 'insensitive' } },
+              { offerings: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {}),
@@ -35,6 +38,8 @@ export async function GET(request: Request) {
       type: true,
       email: true,
       phone: true,
+      category: true,
+      offerings: true,
       picName: true,
       address: true,
       npwp: true,
@@ -75,6 +80,7 @@ export async function POST(request: Request) {
       },
     })
 
+    await writeAuditLog({ workspaceId: context.workspace.id, actorUserId: context.user.id, action: 'CREATE', entityType: 'CLIENT_VENDOR', entityId: client.id, metadata: { type: client.type, name: client.name } })
     return NextResponse.json({ client }, { status: 201 })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Gagal membuat kontak.'

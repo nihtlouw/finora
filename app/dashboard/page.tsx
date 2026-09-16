@@ -9,13 +9,13 @@ export const dynamic = 'force-dynamic'
 export default async function DashboardPage() {
  const context=await getCurrentFinoraContext(); if(!context) redirect('/sign-in')
  const clientIds=(await prisma.clientVendor.findMany({where:{workspaceId:context.workspace.id},select:{id:true}})).map(x=>x.id)
- const invoices=await prisma.invoice.findMany({where:{clientId:{in:clientIds}},include:{client:true},orderBy:{dueDate:'asc'},take:8})
+ const invoices=await prisma.invoice.findMany({where:{clientId:{in:clientIds}},include:{client:true,payments:{select:{amount:true}}},orderBy:{dueDate:'asc'},take:8})
  const payments=await prisma.payment.findMany({where:{invoice:{clientId:{in:clientIds}}},select:{amount:true}})
- const expenses=await prisma.expense.findMany({where:{vendorId:{in:clientIds}},select:{amount:true}})
+ const expenses=await prisma.expense.findMany({where:{vendorId:{in:clientIds},status:'APPROVED'},select:{amount:true}})
  const income=payments.reduce((s,x)=>s+Number(x.amount),0)
  const expense=expenses.reduce((s,x)=>s+Number(x.amount),0)
  const unpaid=invoices.filter(x=>x.status!=='PAID')
- const receivable=unpaid.reduce((s,x)=>s+Number(x.totalAmount),0)
+ const receivable=unpaid.reduce((s,x)=>s+Math.max(0,Number(x.totalAmount)-x.payments.reduce((p,y)=>p+Number(y.amount),0)),0)
  const activities=[
   ...payments.slice(0,3).map((x,i)=>({id:'p'+i,title:'Pembayaran diterima',detail:money(Number(x.amount)),when:'Terbaru'})),
   ...expenses.slice(0,3).map((x,i)=>({id:'e'+i,title:'Pengeluaran tercatat',detail:money(Number(x.amount)),when:'Terbaru'})),
