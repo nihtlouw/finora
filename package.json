@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "prisma generate",
@@ -22,7 +22,8 @@
     "db:reset-uat-zero": "node scripts/reset-uat-zero.mjs",
     "seed:bsm-project": "node --experimental-strip-types scripts/seed-bsm-project.ts",
     "seed:bsm-complex-quotation": "node --experimental-strip-types scripts/seed-bsm-complex-quotation.ts",
-    "seed:expenses": "node scripts/seed-expense-cases.mjs"
+    "seed:expenses": "node scripts/seed-expense-cases.mjs",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.2",
