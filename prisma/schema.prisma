@@ -1,0 +1,772 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String            @id @default(uuid()) @db.Uuid
+  clerkId     String            @unique
+  name        String?
+  email       String            @unique
+  role        String            @default("VIEWER")
+  memberships WorkspaceMember[]
+  expenses    Expense[]         @relation("ExpenseApprover")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  auditLogs   AuditLog[]
+  gatewayTransactionsCreated PaymentGatewayTransaction[] @relation("GatewayCreator")
+  customerPOsVerified CustomerPO[] @relation("CustomerPOVerifiedBy")
+  customerPOsCancelled CustomerPO[] @relation("CustomerPOCancelledBy")
+  expensesPaid Expense[] @relation("ExpensePayer")
+  changeOrdersRequested ContractChangeOrder[] @relation("ChangeOrderRequester")
+  changeOrdersDecided ContractChangeOrder[] @relation("ChangeOrderDecider")
+  periodsClosed AccountingPeriod[] @relation("PeriodCloser")
+  periodsReopened AccountingPeriod[] @relation("PeriodReopener")
+  creditNotesIssued CreditNote[] @relation("CreditNoteIssuer")
+  creditNotesVoided CreditNote[] @relation("CreditNoteVoider")
+  vendorBillsApproved VendorBill[] @relation("VendorBillApprover")
+  payrollRunsApproved PayrollRun[] @relation("PayrollApprover")
+  payrollRunsPaid PayrollRun[] @relation("PayrollPayer")
+  documentsUploaded ProjectDocument[] @relation("DocumentUploader")
+  reconciliationsDone BankReconciliation[] @relation("ReconciliationUser")
+}
+
+model Workspace {
+  id            String            @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String            @unique
+  members       WorkspaceMember[]
+  clientVendors ClientVendor[]
+  budgets      Budget[]
+  cashflows    CashflowTransaction[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  auditLogs     AuditLog[]
+  gatewayTransactions PaymentGatewayTransaction[]
+  customerPOs CustomerPO[]
+  projects Project[]
+  expenses Expense[]
+  changeOrders ContractChangeOrder[]
+  accountingPeriods AccountingPeriod[]
+  creditNotes CreditNote[]
+  vendorBills VendorBill[]
+  bankAccounts BankAccount[]
+  bankStatements BankStatementTransaction[]
+  reconciliations BankReconciliation[]
+  employees Employee[]
+  payrollRuns PayrollRun[]
+  documents ProjectDocument[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  userId      String    @db.Uuid
+  role        String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  actorUserId String    @db.Uuid
+  action      String
+  entityType  String
+  entityId    String?   @db.Uuid
+  metadata    Json
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  actor       User      @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, entityType, entityId])
+}
+
+model ClientVendor {
+  id          String       @id @default(uuid()) @db.Uuid
+  workspaceId String       @db.Uuid
+  name        String
+  type        String
+  category    String?
+  offerings   String?      @db.Text
+  email       String?
+  phone       String?
+  picName     String?
+  address     String?
+  npwp        String?
+  isActive    Boolean      @default(true)
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  proposals   Proposal[]
+  invoices    Invoice[]
+  expenses    Expense[]
+  customerPOs CustomerPO[]
+  projects    Project[]
+  vendorBills VendorBill[] @relation("VendorBills")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, type])
+  @@index([workspaceId, isActive])
+}
+
+model Proposal {
+  id             String         @id @default(uuid()) @db.Uuid
+  clientId       String         @db.Uuid
+  proposalNumber String         @unique
+  status         String
+  quotationReference String?
+  projectName    String?
+  projectLocation String?
+  scopeSummary   String? @db.Text
+  subtotalAmount  Decimal        @default(0) @db.Decimal(18,2)
+  discountPercent Decimal        @default(0) @db.Decimal(5,2)
+  discountAmount  Decimal        @default(0) @db.Decimal(18,2)
+  taxPercent      Decimal        @default(0) @db.Decimal(5,2)
+  taxAmount       Decimal        @default(0) @db.Decimal(18,2)
+  totalAmount    Decimal        @db.Decimal(18,2)
+  termsAndConditions String?      @db.Text
+  validUntil     DateTime       @db.Date
+  client         ClientVendor   @relation(fields: [clientId], references: [id])
+  items          ProposalItem[]
+  sections      ProposalSection[]
+  invoice        Invoice?
+  customerPOs    CustomerPO[]
+  projects       Project[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model ProposalSection {
+  id          String         @id @default(uuid()) @db.Uuid
+  proposalId  String         @db.Uuid
+  code        String
+  name        String
+  description String?        @db.Text
+  sortOrder   Int            @default(0)
+  proposal    Proposal       @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  items       ProposalItem[]
+
+  @@index([proposalId, sortOrder])
+}
+
+model ProposalItem {
+  id             String          @id @default(uuid()) @db.Uuid
+  proposalId     String          @db.Uuid
+  sectionId      String?         @db.Uuid
+  description    String
+  category       String          @default("SERVICE")
+  brand          String?
+  itemType       String?
+  specification  String?         @db.Text
+  qty            Int
+  unit           String          @default("UNIT")
+  unitPrice      Decimal         @db.Decimal(18,2)
+  notes          String?         @db.Text
+  proposal       Proposal        @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  section        ProposalSection? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
+  @@index([sectionId])
+}
+
+
+model CustomerPO {
+  id             String       @id @default(uuid()) @db.Uuid
+  workspaceId    String       @db.Uuid
+  clientId       String       @db.Uuid
+  quotationId    String?      @db.Uuid
+  poNumber       String
+  poDate         DateTime     @db.Date
+  receivedDate   DateTime     @db.Date
+  reference      String?
+  status         String       @default("RECEIVED")
+  totalAmount    Decimal      @db.Decimal(18,2)
+  taxAmount      Decimal      @default(0) @db.Decimal(18,2)
+  grandTotal     Decimal      @db.Decimal(18,2)
+  quotationSubtotalSnapshot Decimal @default(0) @db.Decimal(18,2)
+  quotationTaxSnapshot Decimal @default(0) @db.Decimal(18,2)
+  quotationGrandTotalSnapshot Decimal @default(0) @db.Decimal(18,2)
+  commercialVarianceAmount Decimal @default(0) @db.Decimal(18,2)
+  commercialVarianceReason String? @db.Text
+  verifiedAt     DateTime?
+  verifiedByUserId String? @db.Uuid
+  cancelledAt    DateTime?
+  cancelledByUserId String? @db.Uuid
+  remarks        String?      @db.Text
+  documentUrl    String?      @db.Text
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  client         ClientVendor @relation(fields: [clientId], references: [id])
+  quotation      Proposal?    @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  verifiedBy     User?        @relation("CustomerPOVerifiedBy", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  cancelledBy    User?        @relation("CustomerPOCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: SetNull)
+  project        Project?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([workspaceId, poNumber])
+  @@index([workspaceId, status])
+  @@index([workspaceId, clientId])
+  @@index([workspaceId, quotationId])
+  @@index([workspaceId, quotationId, status])
+}
+
+model Project {
+  id             String       @id @default(uuid()) @db.Uuid
+  workspaceId    String       @db.Uuid
+  clientId       String       @db.Uuid
+  proposalId     String?      @db.Uuid
+  customerPoId  String?      @unique @db.Uuid
+  projectCode    String
+  projectName    String
+  location       String?
+  startDate      DateTime?    @db.Date
+  targetEndDate  DateTime?    @db.Date
+  contractValue  Decimal      @default(0) @db.Decimal(18,2)
+  status         String       @default("PLANNED")
+  notes          String?      @db.Text
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  client         ClientVendor @relation(fields: [clientId], references: [id])
+  proposal       Proposal?    @relation(fields: [proposalId], references: [id], onDelete: SetNull)
+  customerPO     CustomerPO?  @relation(fields: [customerPoId], references: [id], onDelete: SetNull)
+  invoices       Invoice[]
+  allocations    ExpenseAllocation[]
+  expenses       Expense[] @relation("ExpenseProject")
+  billingMilestones BillingMilestone[]
+  paymentMilestones PaymentMilestone[]
+  changeOrders ContractChangeOrder[]
+  documents ProjectDocument[]
+  payrollAllocations PayrollAllocation[]
+  vendorBills VendorBill[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([workspaceId, projectCode])
+  @@index([workspaceId, status])
+  @@index([workspaceId, clientId])
+  @@index([workspaceId, proposalId])
+}
+
+model Invoice {
+  id            String         @id @default(uuid()) @db.Uuid
+  clientId      String         @db.Uuid
+  proposalId    String?        @unique @db.Uuid
+  projectId     String?        @db.Uuid
+  billingMilestoneId String?   @unique @db.Uuid
+  invoiceNumber String         @unique
+  status        String
+  projectName   String?
+  projectLocation String?
+  scopeSummary  String?        @db.Text
+  dueDate       DateTime       @db.Date
+  subtotalAmount Decimal        @default(0) @db.Decimal(18,2)
+  discountPercent Decimal      @default(0) @db.Decimal(5,2)
+  discountAmount Decimal        @default(0) @db.Decimal(18,2)
+  taxPercent     Decimal        @default(0) @db.Decimal(5,2)
+  taxAmount      Decimal        @default(0) @db.Decimal(18,2)
+  totalAmount   Decimal        @db.Decimal(18,2)
+  termsAndConditions String?   @db.Text
+  client        ClientVendor   @relation(fields: [clientId], references: [id])
+  proposal      Proposal?      @relation(fields: [proposalId], references: [id])
+  project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  billingMilestone BillingMilestone? @relation(fields: [billingMilestoneId], references: [id], onDelete: SetNull)
+  items         InvoiceItem[]
+  payments      Payment[]
+  gatewayTransactions PaymentGatewayTransaction[]
+  creditNotes CreditNote[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([projectId])
+}
+
+model BillingMilestone {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @db.Uuid
+  sequence    Int
+  name        String
+  percentage  Decimal  @db.Decimal(5,2)
+  amount      Decimal  @db.Decimal(18,2)
+  plannedDate DateTime? @db.Date
+  status      String   @default("PLANNED")
+  notes       String?  @db.Text
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invoice     Invoice?
+  paymentMilestones PaymentMilestone[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, sequence])
+  @@index([projectId, status])
+  @@index([projectId, plannedDate])
+}
+
+model PaymentMilestone {
+  id                 String   @id @default(uuid()) @db.Uuid
+  projectId          String   @db.Uuid
+  billingMilestoneId String?  @db.Uuid
+  sequence           Int
+  name               String
+  percentage         Decimal  @db.Decimal(5,2)
+  amount             Decimal  @db.Decimal(18,2)
+  dueDate            DateTime? @db.Date
+  status             String   @default("PLANNED")
+  notes              String?  @db.Text
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  billingMilestone   BillingMilestone? @relation(fields: [billingMilestoneId], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([projectId, sequence])
+  @@index([projectId, status])
+  @@index([projectId, dueDate])
+}
+
+model InvoiceItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceId      String   @db.Uuid
+  description    String
+  category       String   @default("SERVICE")
+  brand          String?
+  itemType       String?
+  specification  String?  @db.Text
+  qty            Int
+  unit           String   @default("UNIT")
+  unitPrice      Decimal  @db.Decimal(18,2)
+  notes          String?  @db.Text
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String                @id @default(uuid()) @db.Uuid
+  invoiceId   String                @db.Uuid
+  amount      Decimal               @db.Decimal(18,2)
+  paymentDate DateTime              @db.Date
+  method      String
+  invoice     Invoice               @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  cashflow    CashflowTransaction[]
+  gatewayTransaction PaymentGatewayTransaction?
+  createdAt   DateTime              @default(now())
+}
+
+model PaymentGatewayTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String    @db.Uuid
+  invoiceId       String    @db.Uuid
+  createdByUserId  String    @db.Uuid
+  paymentId       String?   @unique @db.Uuid
+  provider        String
+  orderId         String    @unique
+  transactionId   String?   @unique
+  amount          Decimal   @db.Decimal(18,2)
+  status          String
+  paymentType     String?
+  snapToken       String?  @db.Text
+  redirectUrl     String?  @db.Text
+  rawResponse     Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdBy       User      @relation("GatewayCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  payment         Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, invoiceId, status])
+  @@index([workspaceId, provider, status])
+}
+
+model Expense {
+  id             String                @id @default(uuid()) @db.Uuid
+  workspaceId    String                @db.Uuid
+  vendorId       String?               @db.Uuid
+  projectId      String?               @db.Uuid
+  payeeName      String?               @db.VarChar(200)
+  approvedBy     String?               @db.Uuid
+  category       String
+  allocationType String                @default("UNALLOCATED")
+  description    String?               @db.Text
+  paymentMethod  String?
+  settlementStatus String @default("UNPAID")
+  paidAt         DateTime?
+  paidBy         String?   @db.Uuid
+  receiptUrl     String?               @db.Text
+  amount         Decimal               @db.Decimal(18,2)
+  expenseDate    DateTime              @db.Date
+  status         String
+  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendor         ClientVendor?         @relation(fields: [vendorId], references: [id])
+  project        Project?              @relation("ExpenseProject", fields: [projectId], references: [id], onDelete: SetNull)
+  approver       User?                 @relation("ExpenseApprover", fields: [approvedBy], references: [id])
+  payer          User?                 @relation("ExpensePayer", fields: [paidBy], references: [id], onDelete: SetNull)
+  allocations    ExpenseAllocation[]
+  items          ExpenseItem[]
+  attachments    ExpenseAttachment[]
+  cashflow       CashflowTransaction[]
+  vendorBill VendorBill? @relation("BillExpense")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([workspaceId, expenseDate])
+  @@index([workspaceId, projectId])
+  @@index([workspaceId, allocationType])
+  @@index([workspaceId, status])
+  @@index([workspaceId, settlementStatus])
+}
+
+
+model ExpenseItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  expenseId   String   @db.Uuid
+  description String
+  quantity    Decimal  @db.Decimal(18,3)
+  unit        String
+  unitPrice   Decimal  @db.Decimal(18,2)
+  totalAmount Decimal  @db.Decimal(18,2)
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([expenseId])
+}
+
+model ExpenseAttachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  expenseId   String   @db.Uuid
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  data        Bytes
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([expenseId])
+}
+
+model ExpenseAllocation {
+  id         String   @id @default(uuid()) @db.Uuid
+  expenseId  String   @db.Uuid
+  projectId  String   @db.Uuid
+  percentage Decimal  @db.Decimal(5,2)
+  amount     Decimal  @db.Decimal(18,2)
+  note       String?  @db.Text
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([expenseId, projectId])
+  @@index([projectId])
+}
+
+model CashflowTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  workspaceId     String?   @db.Uuid
+  type            String
+  category        String
+  amount          Decimal   @db.Decimal(18,2)
+  transactionDate DateTime  @db.Date
+  sourceRef       String?
+  paymentId       String?   @db.Uuid
+  expenseId       String?   @db.Uuid
+  bankAccountId   String?   @db.Uuid
+  vendorBillPaymentId String? @db.Uuid
+  payrollRunId    String?   @db.Uuid
+  payment         Payment?  @relation(fields: [paymentId], references: [id])
+  expense         Expense?  @relation(fields: [expenseId], references: [id])
+  workspace       Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  vendorBillPayment VendorBillPayment? @relation(fields: [vendorBillPaymentId], references: [id], onDelete: SetNull)
+  payrollRun      PayrollRun? @relation(fields: [payrollRunId], references: [id], onDelete: SetNull)
+  matchedStatements BankStatementTransaction[] @relation("MatchedCashflow")
+  createdAt       DateTime  @default(now())
+  @@unique([paymentId])
+  @@unique([expenseId])
+  @@unique([vendorBillPaymentId])
+  @@unique([payrollRunId])
+  @@index([workspaceId, transactionDate])
+  @@index([workspaceId, bankAccountId, transactionDate])
+}
+
+model Budget {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String?  @db.Uuid
+  category      String
+  period        String
+  plannedAmount Decimal  @db.Decimal(18,2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  workspace      Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, period])
+}
+
+
+model ContractChangeOrder {
+  id                 String   @id @default(uuid()) @db.Uuid
+  workspaceId        String   @db.Uuid
+  projectId          String   @db.Uuid
+  changeNumber       String
+  status             String   @default("DRAFT")
+  requestedAmount    Decimal  @db.Decimal(18,2)
+  changeType         String   @default("INCREASE")
+  effectiveDate      DateTime @db.Date
+  approvedAmount     Decimal  @default(0) @db.Decimal(18,2)
+  reason             String   @db.Text
+  notes              String?  @db.Text
+  requestedByUserId  String   @db.Uuid
+  decidedByUserId    String?  @db.Uuid
+  decidedAt          DateTime?
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requestedBy        User     @relation("ChangeOrderRequester", fields: [requestedByUserId], references: [id])
+  decidedBy          User?    @relation("ChangeOrderDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  @@unique([workspaceId, projectId, changeNumber])
+  @@index([workspaceId, status])
+}
+
+model AccountingPeriod {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @db.Uuid
+  period           String
+  status           String   @default("OPEN")
+  closedAt         DateTime?
+  closedByUserId   String?  @db.Uuid
+  reopenedAt       DateTime?
+  reopenedByUserId String?  @db.Uuid
+  reopenReason     String?  @db.Text
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  closedBy         User?    @relation("PeriodCloser", fields: [closedByUserId], references: [id], onDelete: SetNull)
+  reopenedBy       User?    @relation("PeriodReopener", fields: [reopenedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@unique([workspaceId, period])
+  @@index([workspaceId, status])
+}
+
+model CreditNote {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @db.Uuid
+  invoiceId        String   @db.Uuid
+  number           String
+  status           String   @default("DRAFT")
+  issueDate        DateTime @db.Date
+  reason           String   @db.Text
+  subtotalAmount   Decimal  @default(0) @db.Decimal(18,2)
+  taxAmount        Decimal  @default(0) @db.Decimal(18,2)
+  totalAmount      Decimal  @db.Decimal(18,2)
+  issuedByUserId   String?  @db.Uuid
+  voidedAt         DateTime?
+  voidedByUserId   String?  @db.Uuid
+  notes            String?  @db.Text
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  issuedBy         User?    @relation("CreditNoteIssuer", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+  voidedBy         User?    @relation("CreditNoteVoider", fields: [voidedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@unique([workspaceId, number])
+  @@index([workspaceId, invoiceId, status])
+}
+
+model VendorBill {
+  id                 String   @id @default(uuid()) @db.Uuid
+  workspaceId        String   @db.Uuid
+  vendorId           String   @db.Uuid
+  projectId          String?  @db.Uuid
+  expenseId          String?  @unique @db.Uuid
+  billNumber         String
+  supplierInvoiceNo  String?
+  billDate           DateTime @db.Date
+  dueDate            DateTime @db.Date
+  status             String   @default("DRAFT")
+  subtotalAmount     Decimal  @default(0) @db.Decimal(18,2)
+  taxAmount          Decimal  @default(0) @db.Decimal(18,2)
+  totalAmount        Decimal  @db.Decimal(18,2)
+  approvedAt         DateTime?
+  approvedByUserId   String?  @db.Uuid
+  notes              String?  @db.Text
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  vendor             ClientVendor @relation("VendorBills", fields: [vendorId], references: [id])
+  project            Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  expense            Expense? @relation("BillExpense", fields: [expenseId], references: [id], onDelete: SetNull)
+  approvedBy         User? @relation("VendorBillApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  payments           VendorBillPayment[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  @@unique([workspaceId, billNumber])
+  @@unique([workspaceId, vendorId, supplierInvoiceNo])
+  @@index([workspaceId, status])
+  @@index([workspaceId, vendorId, dueDate])
+}
+
+model VendorBillPayment {
+  id            String   @id @default(uuid()) @db.Uuid
+  vendorBillId  String   @db.Uuid
+  bankAccountId String?  @db.Uuid
+  paymentDate   DateTime @db.Date
+  amount        Decimal  @db.Decimal(18,2)
+  method        String
+  reference     String?
+  vendorBill    VendorBill @relation(fields: [vendorBillId], references: [id], onDelete: Cascade)
+  bankAccount   BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  cashflow      CashflowTransaction?
+  createdAt     DateTime @default(now())
+  @@index([vendorBillId, paymentDate])
+}
+
+model BankAccount {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @db.Uuid
+  name             String
+  bankName         String
+  accountNumber    String?
+  currency         String   @default("IDR")
+  openingBalance   Decimal  @default(0) @db.Decimal(18,2)
+  isActive         Boolean  @default(true)
+  isDefault        Boolean  @default(false)
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  cashflows        CashflowTransaction[]
+  statements       BankStatementTransaction[]
+  vendorPayments   VendorBillPayment[]
+  reconciliations  BankReconciliation[]
+  @@index([workspaceId, isActive])
+  @@index([workspaceId, isDefault])
+}
+
+model BankStatementTransaction {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @db.Uuid
+  bankAccountId    String   @db.Uuid
+  transactionDate  DateTime @db.Date
+  direction        String
+  amount           Decimal  @db.Decimal(18,2)
+  description      String?  @db.Text
+  reference        String?
+  externalId       String?
+  matchStatus      String   @default("UNMATCHED")
+  matchedCashflowId String? @db.Uuid
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bankAccount      BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  matchedCashflow  CashflowTransaction? @relation("MatchedCashflow", fields: [matchedCashflowId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+  @@unique([workspaceId, bankAccountId, externalId])
+  @@index([workspaceId, bankAccountId, transactionDate])
+  @@index([workspaceId, matchStatus])
+}
+
+model BankReconciliation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  workspaceId           String   @db.Uuid
+  bankAccountId         String   @db.Uuid
+  periodStart           DateTime @db.Date
+  periodEnd             DateTime @db.Date
+  status                String   @default("DRAFT")
+  statementEndingBalance Decimal @db.Decimal(18,2)
+  bookBalance           Decimal @db.Decimal(18,2)
+  difference             Decimal @db.Decimal(18,2)
+  reconciledAt          DateTime?
+  reconciledByUserId    String?  @db.Uuid
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  bankAccount           BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  reconciledBy          User? @relation("ReconciliationUser", fields: [reconciledByUserId], references: [id], onDelete: SetNull)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  @@unique([workspaceId, bankAccountId, periodStart, periodEnd])
+}
+
+model Employee {
+  id             String   @id @default(uuid()) @db.Uuid
+  workspaceId    String   @db.Uuid
+  employeeNo     String
+  name           String
+  email          String?
+  taxId          String?
+  maritalStatus  String?
+  baseSalary     Decimal  @default(0) @db.Decimal(18,2)
+  bankName       String?
+  bankAccount    String?
+  isActive       Boolean  @default(true)
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  payrollLines   PayrollLine[]
+  @@unique([workspaceId, employeeNo])
+  @@index([workspaceId, isActive])
+}
+
+model PayrollRun {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @db.Uuid
+  runNumber        String
+  period           String
+  status           String   @default("DRAFT")
+  payDate          DateTime @db.Date
+  grossAmount      Decimal  @default(0) @db.Decimal(18,2)
+  deductionAmount  Decimal  @default(0) @db.Decimal(18,2)
+  netAmount        Decimal  @default(0) @db.Decimal(18,2)
+  approvedAt       DateTime?
+  approvedByUserId String?  @db.Uuid
+  paidAt           DateTime?
+  paidByUserId     String?  @db.Uuid
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  approvedBy       User? @relation("PayrollApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  paidBy           User? @relation("PayrollPayer", fields: [paidByUserId], references: [id], onDelete: SetNull)
+  lines            PayrollLine[]
+  cashflow         CashflowTransaction?
+  @@unique([workspaceId, runNumber])
+  @@unique([workspaceId, period])
+  @@index([workspaceId, status])
+}
+
+model PayrollLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  payrollRunId   String   @db.Uuid
+  employeeId     String   @db.Uuid
+  grossAmount    Decimal  @db.Decimal(18,2)
+  taxableAmount  Decimal  @db.Decimal(18,2)
+  pph21Amount    Decimal  @default(0) @db.Decimal(18,2)
+  bpjsAmount     Decimal  @default(0) @db.Decimal(18,2)
+  otherDeduction Decimal  @default(0) @db.Decimal(18,2)
+  netAmount      Decimal  @db.Decimal(18,2)
+  payrollRun     PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  allocations    PayrollAllocation[]
+  @@unique([payrollRunId, employeeId])
+}
+
+model PayrollAllocation {
+  id           String   @id @default(uuid()) @db.Uuid
+  payrollLineId String  @db.Uuid
+  projectId    String   @db.Uuid
+  percentage   Decimal  @db.Decimal(5,2)
+  amount       Decimal  @db.Decimal(18,2)
+  payrollLine  PayrollLine @relation(fields: [payrollLineId], references: [id], onDelete: Cascade)
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  @@unique([payrollLineId, projectId])
+  @@index([projectId])
+}
+
+model ProjectDocument {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @db.Uuid
+  projectId    String   @db.Uuid
+  title        String
+  category     String   @default("GENERAL")
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  data         Bytes
+  uploadedById String   @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy   User @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime @default(now())
+  @@index([workspaceId, projectId, category])
+}
