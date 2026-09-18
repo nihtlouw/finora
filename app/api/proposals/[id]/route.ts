@@ -2,11 +2,19 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { writeAuditLog } from '@/lib/audit'
 import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-user'
-import { dateOnly, lineItemsTotalCents, requireText, positiveMoney, optionalText } from '@/lib/validation/finance'
-import { calculateCommercialTotals, percentageBps, bpsToDecimal } from '@/lib/validation/commercial'
+import { dateOnly, lineItemsTotalCents, requireText, positiveMoney, optionalText, parseMoneyCents, centsToDecimal } from '@/lib/validation/finance'
+import { percentageBps, bpsToDecimal } from '@/lib/validation/commercial'
 
 export const dynamic = 'force-dynamic'
 const ALLOWED = new Set(['DRAFT', 'SENT', 'NEGOTIATION', 'WON', 'LOST', 'EXPIRED', 'CANCELLED'])
+
+function commercialWithOverhead(subtotalCents: bigint, discountBps: bigint, taxBps: bigint, overheadCents: bigint, roundingCents: bigint) {
+  const discount = (subtotalCents * discountBps + 5000n) / 10000n
+  const net = subtotalCents > discount ? subtotalCents - discount : 0n
+  const tax = (net * taxBps + 5000n) / 10000n
+  const total = net + overheadCents + tax
+  return { subtotal: centsToDecimal(subtotalCents), discount: centsToDecimal(discount), tax: centsToDecimal(tax), total: centsToDecimal(total), rounded: centsToDecimal(total + roundingCents), overhead: centsToDecimal(overheadCents), rounding: centsToDecimal(roundingCents) }
+}
 
 function normalizeSections(body: any) {
   const rawSections = Array.isArray(body.sections) ? body.sections : []
@@ -66,7 +74,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       validateSections(sections)
       const items = sections.flatMap((section: any) => Array.isArray(section.items) ? section.items : [])
       const subtotalCents = lineItemsTotalCents(items)
-      const commercial = calculateCommercialTotals(subtotalCents, percentageBps(body.discountPercent ?? 0, 'Diskon'), percentageBps(body.taxPercent ?? 0, 'Pajak'))
+      const discountBps = percentageBps(body.discountPercent ?? 0, 'Diskon'); const taxBps = percentageBps(body.taxPercent ?? 0, 'Pajak'); const overheadCents = parseMoneyCents(String(body.overheadAmount ?? '0')); const roundingCents = parseMoneyCents(String(body.roundingAmount ?? '0')); const commercial = commercialWithOverhead(subtotalCents, discountBps, taxBps, overheadCents, roundingCents)
       const validUntil = dateOnly(body.validUntil, 'Berlaku sampai')
       const termsAndConditions = optionalText(body.termsAndConditions, 5000)
       await prisma.$transaction(async tx => {
@@ -76,7 +84,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         // orphans together with the section tree when replacing a DRAFT.
         await tx.proposalItem.deleteMany({ where: { proposalId: id, sectionId: null } })
         await tx.proposalSection.deleteMany({ where: { proposalId: id } })
-        return tx.proposal.update({ where: { id }, data: { clientId, quotationReference: optionalText(body.quotationReference, 150), projectName: optionalText(body.projectName, 250), projectLocation: optionalText(body.projectLocation, 250), scopeSummary: optionalText(body.scopeSummary, 5000), validUntil, subtotalAmount: commercial.subtotalAmount, discountPercent: bpsToDecimal(commercial.discountPercentBps), discountAmount: commercial.discountAmount, taxPercent: bpsToDecimal(commercial.taxPercentBps), taxAmount: commercial.taxAmount, totalAmount: commercial.totalAmount, termsAndConditions, sections: { create: sectionCreateData(sections) } } })
+        return tx.proposal.update({ where: { id }, data: { clientId, quotationReference: optionalText(body.quotationReference, 150), projectName: optionalText(body.projectName, 250), projectLocation: optionalText(body.projectLocation, 250), scopeSummary: optionalText(body.scopeSummary, 5000), validUntil, subtotalAmount: commercial.subtotal, discountPercent: bpsToDecimal(discountBps), discountAmount: commercial.discount, taxPercent: bpsToDecimal(taxBps), taxAmount: commercial.tax, totalAmount: commercial.total, currency: String(body.currency || 'IDR'), taxIncluded: Boolean(body.taxIncluded), overheadAmount: commercial.overhead, roundingAmount: commercial.rounding, roundedTotalAmount: commercial.rounded, pricingMode: String(body.pricingMode || 'ITEM_SUM'), commercialNotes: optionalText(body.commercialNotes, 5000), termsAndConditions, sections: { create: sectionCreateData(sections) } } })
       })
       const proposal = await prisma.proposal.findUnique({ where: { id }, include: { client: true, items: true, sections: { orderBy: { sortOrder: 'asc' }, include: { items: true } }, invoice: true } })
       await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action: 'UPDATE', entityType: 'PROPOSAL', entityId: id, metadata: { total: proposal?.totalAmount?.toString(), sectionCount: proposal?.sections?.length || 0 } })

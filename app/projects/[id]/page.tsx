@@ -9,6 +9,8 @@ import ProjectStatusControl from '@/components/project-status-control'
 import ProjectExpenseSection from '@/components/project-expense-section'
 import ProjectProfitabilityCard from '@/components/project-profitability-card'
 import ProjectDocumentsManager from '@/components/project-documents-manager'
+import ProjectExecutionControl from '@/components/project-execution-control'
+import ProjectBOQControl from '@/components/project-boq-control'
 import { getProjectProfitability } from '@/lib/project-profitability'
 
 export const dynamic='force-dynamic'
@@ -37,15 +39,17 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   <nav className="f-project-section-nav" aria-label="Navigasi section project">
     <a href="#profitability-project">Profitability</a>
     <a href="#expenses-project">Expenses</a>
-    <a href="#billing-payment">Billing &amp; payment</a>
+    <a href="#execution-project">Execution</a><a href="#billing-payment">Billing &amp; payment</a>
     <a href="#project-information">Project info</a>
   </nav>
 
   <div className="f-detail-main-grid" id="project-information"><Card><div className="f-card-head"><div><h3>Informasi project</h3><p>Identitas project dan sumber dokumennya.</p></div></div><div className="f-detail-profile-grid"><div><span>Kode project</span><strong>{p.projectCode}</strong></div><div><span>Klien</span><strong>{p.client.name}</strong></div><div><span>Lokasi</span><strong>{p.location||'—'}</strong></div><div><span>Nilai kontrak (PO)</span><strong>{money(contractValue)}</strong></div><div><span>Mulai</span><strong>{p.startDate?new Date(p.startDate).toLocaleDateString('id-ID'):'—'}</strong></div><div><span>Target selesai</span><strong>{p.targetEndDate?new Date(p.targetEndDate).toLocaleDateString('id-ID'):'—'}</strong></div><div><span>Quotation</span><strong>{p.proposal?.proposalNumber||'—'}</strong></div><div><span>PO Customer</span><strong>{p.customerPO?.poNumber||'—'}</strong></div><div className="full"><span>Catatan</span><strong>{p.notes||'—'}</strong></div></div></Card><Card><div className="f-card-head"><div><h3>Status dokumen</h3><p>Referensi commercial yang membentuk project.</p></div></div><div className="f-list"><div className="f-list-item"><span>Proposal</span><strong>{p.proposal?.status||'—'}</strong></div><div className="f-list-item"><span>PO</span><strong>{p.customerPO?.status||'—'}</strong></div><div className="f-list-item"><span>Grand total PO</span><strong>{p.customerPO?money(Number(p.customerPO.grandTotal)):'—'}</strong></div></div></Card></div>
 
   {profitability && <ProjectProfitabilityCard data={profitability} />}
+  <ProjectBOQControl projectId={p.id} role={c.user.role} />
   <div id="expenses-project"><ProjectExpenseSection rows={projectExpenses} /></div>
 
+  <ProjectExecutionControl projectId={p.id} role={c.user.role} />
   <ProjectMilestoneManager projectId={p.id} contractValue={contractValue} role={c.user.role} />
   <ProjectDocumentsManager projectId={p.id} role={c.user.role} />
  </div></FinoraShell>

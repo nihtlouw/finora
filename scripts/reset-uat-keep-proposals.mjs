@@ -32,6 +32,13 @@ const client = new Client({
 const businessTables = [
   'CashflowTransaction',
   'PaymentGatewayTransaction',
+  'BillingRebaseline',
+  'ProjectDocument',
+  'ProjectBOQItem',
+  'ProjectBOQSection',
+  'BillingMilestoneCondition',
+  'ProjectExecutionMilestone',
+  'ProjectContractVersion',
   'Payment',
   'InvoiceItem',
   'Invoice',
@@ -42,6 +49,7 @@ const businessTables = [
   'Project',
   'CustomerPO',
   'Budget',
+  'ContractChangeOrder',
   'AuditLog',
 ];
 
@@ -64,8 +72,8 @@ async function main() {
   console.log(`Database : ${database}`);
   console.log(`Host     : ${host}`);
   console.log('\nDihapus:');
-  console.log('  Customer PO, Project, Billing Milestone, Payment Milestone');
-  console.log('  Invoice, Invoice Item, Payment, Payment Gateway Transaction');
+  console.log('  Customer PO, Project, Billing Milestone, Payment Milestone, Change Order');
+  console.log('  Invoice, Invoice Item, Payment, Payment Gateway Transaction, Project BOQ, Execution Milestone, Contract Version, Billing Rebaseline, Project Documents');
   console.log('  Expense, Expense Allocation, Cashflow, Budget, Audit Log');
   console.log('  Client/Vendor yang TIDAK dipakai oleh Proposal');
   console.log('\nDipertahankan:');
@@ -103,6 +111,14 @@ async function main() {
     await client.query(`DELETE FROM ${q('CashflowTransaction')}`);
     await client.query(`DELETE FROM ${q('PaymentGatewayTransaction')}`);
     await client.query(`DELETE FROM ${q('Payment')}`);
+    await client.query(`DELETE FROM ${q('BillingRebaseline')}`);
+    await client.query(`DELETE FROM ${q('ProjectDocument')}`);
+    await client.query(`DELETE FROM ${q('ProjectBOQItem')}`);
+    await client.query(`DELETE FROM ${q('ProjectBOQSection')}`);
+    await client.query(`DELETE FROM ${q('BillingMilestoneCondition')}`);
+    await client.query(`DELETE FROM ${q('ProjectExecutionMilestone')}`);
+    await client.query(`DELETE FROM ${q('ContractChangeOrder')}`);
+    await client.query(`DELETE FROM ${q('ProjectContractVersion')}`);
     await client.query(`DELETE FROM ${q('InvoiceItem')}`);
     await client.query(`DELETE FROM ${q('Invoice')}`);
     await client.query(`DELETE FROM ${q('ExpenseAllocation')}`);

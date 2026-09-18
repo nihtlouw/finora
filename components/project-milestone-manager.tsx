@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Badge, Card, StatCard, money } from '@/components/finora-ui'
 
 type Billing = {
-  id: string; sequence: number; name: string; percentage: any; amount: any; plannedDate?: string|null; status: string; displayStatus?: string; notes?: string|null;
+  id: string; sequence: number; name: string; percentage: any; amount: any; plannedDate?: string|null; status: string; displayStatus?: string; notes?: string|null; readiness?: {ready:boolean;missing:string[]};
   invoice?: { id:string; invoiceNumber:string; status:string; dueDate?: string; totalAmount:any }|null
 }
 type Payment = {
@@ -14,6 +14,7 @@ type Payment = {
   actual?: { invoiceId:string; invoiceNumber:string; invoiceStatus:string; paidAmount:number; outstandingAmount:number }|null
 }
 
+type Execution = { id:string; code:string; name:string; status:string }
 type Props = { projectId:string; contractValue:number; role:string }
 
 async function json(r:Response){ try{return await r.json()}catch{return {}} }
@@ -26,16 +27,17 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
   const can=role==='OWNER'||role==='FINANCE'
   const router=useRouter()
   const [billing,setBilling]=useState<Billing[]>([])
+  const [execution,setExecution]=useState<Execution[]>([])
   const [payment,setPayment]=useState<Payment[]>([])
   const [busy,setBusy]=useState(false)
   const [message,setMessage]=useState('')
-  const [bForm,setBForm]=useState({name:'',percentage:'',plannedDate:'',notes:''})
-  const [pForm,setPForm]=useState({name:'',percentage:'',dueDate:'',billingMilestoneId:'',notes:''})
+  const [bForm,setBForm]=useState({name:'',percentage:'',plannedDate:'',notes:'',triggerCode:'',triggerDescription:'',executionMilestoneId:'',requiredDocumentCategory:''})
+  const [pForm,setPForm]=useState({name:'',percentage:'',dueDate:'',billingMilestoneId:'',triggerCode:'',dueDays:'',retentionMonths:'',retentionPercent:'',conditionNotes:'',notes:''})
 
   async function load(){
-    const [b,p]=await Promise.all([fetch(`/api/projects/${projectId}/billing-milestones`),fetch(`/api/projects/${projectId}/payment-milestones`)])
-    const [bd,pd]=await Promise.all([json(b),json(p)])
-    setBilling(bd.billingMilestones||[]); setPayment(pd.paymentMilestones||[])
+    const [b,p,e]=await Promise.all([fetch(`/api/projects/${projectId}/billing-milestones`),fetch(`/api/projects/${projectId}/payment-milestones`),fetch(`/api/projects/${projectId}/execution-milestones`)])
+    const [bd,pd,ed]=await Promise.all([json(b),json(p),json(e)])
+    setBilling(bd.billingMilestones||[]); setPayment(pd.paymentMilestones||[]); setExecution(ed.executionMilestones||[])
   }
   useEffect(()=>{load()},[projectId])
 
@@ -49,13 +51,25 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
   async function create(kind:'billing'|'payment',e:React.FormEvent){
     e.preventDefault(); setBusy(true); setMessage('')
     try{
-      const form=kind==='billing'?bForm:pForm
-      const body=kind==='billing'?{...form,percentage:Number(form.percentage)}:{...form,percentage:Number(form.percentage)}
+      const body = kind === 'billing'
+        ? {
+            ...bForm,
+            percentage: Number(bForm.percentage),
+            conditions: (bForm.executionMilestoneId || bForm.requiredDocumentCategory)
+              ? [{
+                  label: bForm.executionMilestoneId && bForm.requiredDocumentCategory ? 'Execution + evidence gate' : bForm.executionMilestoneId ? 'Execution gate' : 'Evidence gate',
+                  executionMilestoneId: bForm.executionMilestoneId || null,
+                  requiredDocumentCategory: bForm.requiredDocumentCategory || null,
+                  conditionType: bForm.executionMilestoneId && bForm.requiredDocumentCategory ? 'EXECUTION_AND_DOCUMENT' : bForm.executionMilestoneId ? 'EXECUTION' : 'DOCUMENT',
+                }]
+              : [],
+          }
+        : { ...pForm, percentage: Number(pForm.percentage) }
       const r=await fetch(`/api/projects/${projectId}/${kind==='billing'?'billing-milestones':'payment-milestones'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
       const d=await json(r); if(!r.ok) throw new Error(d.error||'Gagal membuat milestone.')
       setMessage(`${kind==='billing'?'Billing':'Payment'} milestone berhasil dibuat.`)
-      if(kind==='billing') setBForm({name:'',percentage:'',plannedDate:'',notes:''})
-      else setPForm({name:'',percentage:'',dueDate:'',billingMilestoneId:'',notes:''})
+      if(kind==='billing') setBForm({name:'',percentage:'',plannedDate:'',notes:'',triggerCode:'',triggerDescription:'',executionMilestoneId:'',requiredDocumentCategory:''})
+      else setPForm({name:'',percentage:'',dueDate:'',billingMilestoneId:'',triggerCode:'',dueDays:'',retentionMonths:'',retentionPercent:'',conditionNotes:'',notes:''})
       await load()
     }catch(e){setMessage(e instanceof Error?e.message:'Gagal membuat milestone.')}finally{setBusy(false)}
   }
@@ -132,6 +146,10 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
               <input className="f-input" readOnly value={previewB?money(previewB):'—'} />
               <small>Kontrak × persentase.</small>
             </label>
+            <label className="span-4"><span>Execution gate</span><select className="f-input" value={bForm.executionMilestoneId} onChange={e=>setBForm(f=>({...f,executionMilestoneId:e.target.value}))}><option value="">Tanpa execution gate</option>{execution.map(x=><option key={x.id} value={x.id}>{x.code} — {x.name}</option>)}</select></label>
+            <label className="span-4"><span>Required evidence</span><select className="f-input" value={bForm.requiredDocumentCategory} onChange={e=>setBForm(f=>({...f,requiredDocumentCategory:e.target.value}))}><option value="">Tanpa evidence gate</option><option>FAT</option><option>DELIVERY</option><option>PROGRESS</option><option>TESTING</option><option>SLO_NIDI</option><option>BAP_BAST</option><option>CLOSEOUT</option></select></label>
+            <label className="span-4"><span>Trigger code</span><input className="f-input" value={bForm.triggerCode} onChange={e=>setBForm(f=>({...f,triggerCode:e.target.value}))} placeholder="FAT_AND_PRE_DELIVERY" /></label>
+            <label className="span-12"><span>Trigger description</span><textarea className="f-input" rows={2} value={bForm.triggerDescription} onChange={e=>setBForm(f=>({...f,triggerDescription:e.target.value}))}/></label>
             <label className="span-9">
               <span>Catatan</span>
               <textarea className="f-input" rows={2} value={bForm.notes} onChange={e=>setBForm(f=>({...f,notes:e.target.value}))} placeholder="Syarat tagihan, dokumen pendukung, atau milestone pekerjaan." />
@@ -159,7 +177,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
             </div>
             <div className="f-milestone-row-actions">
               <Badge tone={tone(x.displayStatus||x.status)}>{x.displayStatus||x.status}</Badge>
-              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy} onClick={()=>setStatus('billing',x.id,'READY')}>Siap tagih</button>}
+              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy||Boolean(x.readiness&&!x.readiness.ready)} title={x.readiness?.missing?.join(' • ')||'Siap tagih'} onClick={()=>setStatus('billing',x.id,'READY')}>Siap tagih</button>}{x.readiness&&!x.readiness.ready&&<span className="f-muted">Gate: {x.readiness.missing.join(' · ')}</span>}
               {can&&(x.displayStatus||x.status)==='READY'&&!x.invoice&&<button className="f-btn primary" disabled={busy} onClick={()=>createInvoice(x.id)}>Buat invoice</button>}
               {x.invoice&&<a className="f-btn" href="/invoices">Invoice {x.invoice.invoiceNumber}</a>}
               {can&&x.status==='PLANNED'&&<button className="f-btn" disabled={busy} onClick={()=>remove('billing',x.id)}>Hapus</button>}
@@ -205,6 +223,10 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
               <input className="f-input" readOnly value={previewP?money(previewP):'—'} />
               <small>Kontrak × persentase.</small>
             </label>
+            <label className="span-3"><span>Trigger code</span><input className="f-input" value={pForm.triggerCode} onChange={e=>setPForm(f=>({...f,triggerCode:e.target.value}))} placeholder="PO_RELEASED" /></label>
+            <label className="span-2"><span>Due days</span><input className="f-input" type="number" min="0" value={pForm.dueDays} onChange={e=>setPForm(f=>({...f,dueDays:e.target.value}))} /></label>
+            <label className="span-2"><span>Retensi (bulan)</span><input className="f-input" type="number" min="0" value={pForm.retentionMonths} onChange={e=>setPForm(f=>({...f,retentionMonths:e.target.value}))} /></label>
+            <label className="span-2"><span>Retensi (%)</span><input className="f-input" type="number" min="0" max="100" step="0.01" value={pForm.retentionPercent} onChange={e=>setPForm(f=>({...f,retentionPercent:e.target.value}))} /></label>
             <label className="span-6">
               <span>Hubungkan billing</span>
               <select className="f-input" value={pForm.billingMilestoneId} onChange={e=>{const id=e.target.value; const linked=billing.find(x=>x.id===id); setPForm(f=>({...f,billingMilestoneId:id,percentage:linked?Number(linked.percentage).toString():f.percentage}))}}>

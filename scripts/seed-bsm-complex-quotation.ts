@@ -30,7 +30,13 @@ const prisma = new PrismaClient({ adapter })
 
 const CLIENT_NAME = 'PT.KLIK UTAMA SYSTEM'
 const PROPOSAL_NUMBER = 'PR-BSM-UAT-2026-001'
-const QUOTATION_REFERENCE = '0072/PH-BSM/KUS/VII/2026'
+const QUOTATION_REFERENCE = 'EST/KUS/0003-AE-07-2026'
+const SOURCE_COVER_LETTER_REFERENCE = '0072/PH-BSM/KUS/VII/2026'
+const SOURCE_SUBTOTAL = 3338506000
+const SOURCE_OVERHEAD = 66770120
+const SOURCE_TOTAL = 3405276120
+const SOURCE_ROUNDING = 3880
+const SOURCE_ROUNDED_TOTAL = 3405280000
 
 type SeedItem = [
   category: string,
@@ -142,15 +148,6 @@ const sectionData: SeedSection[] = [
       ['SERVICE', 'Pengukuran Resistance Pertanahan Grounding', '', '', 'Target 0,1 - 0,5 Ohm', 1, 'LOT', 3300000],
     ],
   },
-  {
-    code: 'E',
-    name: 'OVERHEAD & ROUNDING',
-    description: 'Komponen overhead proyek dan penyesuaian pembulatan untuk simulasi quotation.',
-    items: [
-      ['OTHER', 'Overhead proyek', '', '', 'Simulasi berdasarkan quotation sumber', 1, 'LOT', 66770120],
-      ['OTHER', 'Rounding adjustment', '', '', 'Penyesuaian pembulatan terhadap total quotation sumber', 1, 'LOT', 3880],
-    ],
-  },
 ]
 
 async function main() {
@@ -204,7 +201,6 @@ async function main() {
   // Dataset ini adalah simulasi kompleks berbasis struktur quotation BSM, bukan salinan seluruh BOQ.
   // Total proposal sengaja mengikuti penjumlahan item seed agar tidak gagal hanya karena item simulasi
   // tidak identik dengan total dokumen sumber.
-  const expected = subtotal
 
   const validUntil = futureDate(7)
 
@@ -222,20 +218,27 @@ async function main() {
           projectLocation: 'Jakarta Pusat',
           scopeSummary: 'Pengadaan trafo, cubicle, LVMDP, panel capacitor bank, kabel power, grounding system, dan jasa instalasi listrik.',
           status: 'DRAFT',
-          subtotalAmount: String(expected),
+          subtotalAmount: String(SOURCE_SUBTOTAL),
           discountPercent: '0',
           discountAmount: '0',
-          taxPercent: '0',
+          taxPercent: '11',
           taxAmount: '0',
-          totalAmount: String(expected),
+          totalAmount: String(SOURCE_TOTAL),
+          currency: 'IDR',
+          taxIncluded: false,
+          overheadAmount: String(SOURCE_OVERHEAD),
+          roundingAmount: String(SOURCE_ROUNDING),
+          roundedTotalAmount: String(SOURCE_ROUNDED_TOTAL),
+          pricingMode: 'COMMERCIAL_SNAPSHOT',
+          commercialNotes: 'Snapshot komersial mengikuti ringkasan quotation sumber: subtotal Rp3.338.506.000 + overhead Rp66.770.120 = Rp3.405.276.120, rounded Rp3.405.280.000. PPN 11% belum termasuk.',
           termsAndConditions: [
-            'Harga penawaran belum termasuk PPN 11%.',
+            'Harga penawaran belum termasuk PPN 11%. Tax treatment: tax excluded.',
             'Penawaran berlaku selama 7 hari kalender.',
             'Garansi material utama panel listrik dan trafo distribusi 1 tahun.',
             'Simulasi termin: DP 50% setelah SPK/PO terbit; progress 45% setelah FAT dan material sebelum delivery onsite; retensi 5% setelah masa retensi 2 bulan.',
             'Mohon dukungan proses ijin di site mengingat project prioritas.',
-            'Catatan: data ini adalah simulasi UAT berbasis struktur dokumen BSM, bukan salinan quotation customer secara penuh.',
-            'Nilai total simulasi dihitung dari item BOQ yang di-seed agar konsisten dengan detail UAT.',
+            `Referensi surat: ${SOURCE_COVER_LETTER_REFERENCE}.`,
+            'Catatan: detail item adalah dataset UAT berbasis BOQ sumber; ringkasan komersial mengikuti angka dokumen sumber.',
           ].join('\n'),
           validUntil,
         },
@@ -250,20 +253,27 @@ async function main() {
           projectLocation: 'Jakarta Pusat',
           scopeSummary: 'Pengadaan trafo, cubicle, LVMDP, panel capacitor bank, kabel power, grounding system, dan jasa instalasi listrik.',
           status: 'DRAFT',
-          subtotalAmount: String(expected),
+          subtotalAmount: String(SOURCE_SUBTOTAL),
           discountPercent: '0',
           discountAmount: '0',
-          taxPercent: '0',
+          taxPercent: '11',
           taxAmount: '0',
-          totalAmount: String(expected),
+          totalAmount: String(SOURCE_TOTAL),
+          currency: 'IDR',
+          taxIncluded: false,
+          overheadAmount: String(SOURCE_OVERHEAD),
+          roundingAmount: String(SOURCE_ROUNDING),
+          roundedTotalAmount: String(SOURCE_ROUNDED_TOTAL),
+          pricingMode: 'COMMERCIAL_SNAPSHOT',
+          commercialNotes: 'Snapshot komersial mengikuti ringkasan quotation sumber: subtotal Rp3.338.506.000 + overhead Rp66.770.120 = Rp3.405.276.120, rounded Rp3.405.280.000. PPN 11% belum termasuk.',
           termsAndConditions: [
-            'Harga penawaran belum termasuk PPN 11%.',
+            'Harga penawaran belum termasuk PPN 11%. Tax treatment: tax excluded.',
             'Penawaran berlaku selama 7 hari kalender.',
             'Garansi material utama panel listrik dan trafo distribusi 1 tahun.',
             'Simulasi termin: DP 50% setelah SPK/PO terbit; progress 45% setelah FAT dan material sebelum delivery onsite; retensi 5% setelah masa retensi 2 bulan.',
             'Mohon dukungan proses ijin di site mengingat project prioritas.',
-            'Catatan: data ini adalah simulasi UAT berbasis struktur dokumen BSM, bukan salinan quotation customer secara penuh.',
-            'Nilai total simulasi dihitung dari item BOQ yang di-seed agar konsisten dengan detail UAT.',
+            `Referensi surat: ${SOURCE_COVER_LETTER_REFERENCE}.`,
+            'Catatan: detail item adalah dataset UAT berbasis BOQ sumber; ringkasan komersial mengikuti angka dokumen sumber.',
           ].join('\n'),
           validUntil,
         },
@@ -313,7 +323,7 @@ async function main() {
           proposalNumber: PROPOSAL_NUMBER,
           reference: QUOTATION_REFERENCE,
           sourceStyle: 'BSM quotation / BOQ simulation',
-          total: String(expected),
+          total: String(SOURCE_ROUNDED_TOTAL),
           sectionCount: sectionData.length,
           itemCount: sectionData.reduce((n, s) => n + s.items.length, 0),
         },
@@ -327,10 +337,13 @@ async function main() {
   console.log(`Workspace : ${membership.workspace.name}`)
   console.log(`Client    : ${client.name}`)
   console.log(`Proposal  : ${proposal.proposalNumber}`)
-  console.log(`Reference : ${QUOTATION_REFERENCE}`)
+  console.log(`Reference : ${QUOTATION_REFERENCE} (cover ${SOURCE_COVER_LETTER_REFERENCE})`)
   console.log('Project   : GD PAV KARTIKA I RSPAD GATOT SUBROTO PUSKESAD')
-  console.log(`Subtotal  : Rp${subtotal.toLocaleString('id-ID')}`)
-  console.log(`Total     : Rp${expected.toLocaleString('id-ID')}`)
+  console.log(`BOQ item sum (UAT detail): Rp${subtotal.toLocaleString('id-ID')}`)
+  console.log(`Commercial subtotal      : Rp${SOURCE_SUBTOTAL.toLocaleString('id-ID')}`)
+  console.log(`Overhead                 : Rp${SOURCE_OVERHEAD.toLocaleString('id-ID')}`)
+  console.log(`Unrounded total          : Rp${SOURCE_TOTAL.toLocaleString('id-ID')}`)
+  console.log(`Rounded total            : Rp${SOURCE_ROUNDED_TOTAL.toLocaleString('id-ID')}`)
   console.log(`Sections  : ${sectionData.length}`)
   console.log(`Items     : ${sectionData.reduce((n, s) => n + s.items.length, 0)}`)
   console.log('Status    : DRAFT')

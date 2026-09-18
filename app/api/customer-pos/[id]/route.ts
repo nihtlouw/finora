@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-user'
 import { writeAuditLog } from '@/lib/audit'
+import { createProjectExecutionFoundation, snapshotProposalBOQ } from '@/lib/project-execution'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,7 +32,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       const project = await prisma.$transaction(async (tx) => {
         const duplicate = await tx.project.findFirst({ where: { workspaceId: c.workspace.id, projectCode } })
         if (duplicate) throw new Error('Kode project sudah digunakan.')
-        return tx.project.create({
+        const project = await tx.project.create({
           data: {
             workspaceId: c.workspace.id,
             clientId: existing.clientId,
@@ -43,11 +44,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
             startDate: b.startDate ? new Date(`${b.startDate}T00:00:00.000Z`) : null,
             targetEndDate: b.targetEndDate ? new Date(`${b.targetEndDate}T00:00:00.000Z`) : null,
             contractValue: existing.grandTotal,
+            revenueBasisValue: existing.grandTotal.sub(existing.taxAmount),
             status: 'PLANNED',
             notes: b.notes ? String(b.notes).trim() : null,
           },
           include: { client: true, proposal: true, customerPO: true },
         })
+        await snapshotProposalBOQ(tx, project.id, existing.quotationId!)
+        await createProjectExecutionFoundation(tx, project.id)
+        await tx.projectContractVersion.create({ data: { projectId: project.id, versionNumber: 1, sourceType: 'CUSTOMER_PO', sourceId: existing.id, effectiveDate: project.startDate ?? existing.poDate, contractValue: project.contractValue, notes: 'Initial contract snapshot saat project dibuat.' } })
+        return project
       })
 
       await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action: 'CREATE_PROJECT_FROM_PO', entityType: 'PROJECT', entityId: project.id, metadata: { customerPoId: existing.id, projectCode, contractValue: existing.grandTotal.toString() } })

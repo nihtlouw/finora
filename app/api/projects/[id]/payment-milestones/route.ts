@@ -84,7 +84,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (existingSequence) return NextResponse.json({ error: `Urutan milestone ${sequence} sudah digunakan.` }, { status: 409 })
     const amount = expectedAmount(project.contractValue.toString(), pct)
     const dueDate = b.dueDate ? dateOnly(b.dueDate, 'Jatuh tempo payment milestone') : null
-    const row = await prisma.paymentMilestone.create({ data: { projectId: id, billingMilestoneId, sequence, name, percentage: pct.toFixed(2), amount, dueDate, status: 'PLANNED', notes: b.notes ? String(b.notes).trim() : null }, include: { billingMilestone: true } })
+    const row = await prisma.paymentMilestone.create({ data: { projectId: id, billingMilestoneId, sequence, name, percentage: pct.toFixed(2), amount, dueDate, status: 'PLANNED', triggerCode: b.triggerCode ? String(b.triggerCode).trim() : null, dueDays: b.dueDays === undefined || b.dueDays === '' ? null : Number(b.dueDays), retentionMonths: b.retentionMonths === undefined || b.retentionMonths === '' ? null : Number(b.retentionMonths), retentionPercent: b.retentionPercent === undefined || b.retentionPercent === '' ? null : Number(b.retentionPercent), conditionNotes: b.conditionNotes ? String(b.conditionNotes).trim() : null, notes: b.notes ? String(b.notes).trim() : null }, include: { billingMilestone: true } })
     await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action: 'CREATE', entityType: 'PAYMENT_MILESTONE', entityId: row.id, metadata: { projectId: id, projectCode: project.projectCode, sequence, percentage: pct, amount, billingMilestoneId } })
     return NextResponse.json({ paymentMilestone: row }, { status: 201 })
   } catch (e) {

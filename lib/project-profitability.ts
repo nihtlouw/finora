@@ -37,7 +37,7 @@ export type ProjectProfitability = {
   pendingExpenseCount: number
   costByCategory: { category: string; amount: number; pctOfCost: number }[]
   costByAllocationType: { type: string; amount: number }[]
-  basis: 'PO_GRAND_TOTAL' | 'PROJECT_CONTRACT_VALUE'
+  basis: 'PO_NET_OF_TAX' | 'PO_GRAND_TOTAL' | 'PROJECT_CONTRACT_VALUE'
 }
 
 const EXCLUDED_INVOICE_STATUSES = new Set(['CANCELLED', 'VOID'])
@@ -49,6 +49,7 @@ export function calculateProjectProfitability(input: {
     projectName: string
     clientName: string
     contractValue: number
+    revenueBasisValue?: number | null
     poGrandTotal?: number | null
   }
   invoices: InvoiceLike[]
@@ -56,9 +57,9 @@ export function calculateProjectProfitability(input: {
   payrollCosts?: { amount: number; status: string }[]
   vendorBillCosts?: { amount: number; status: string }[]
 }): ProjectProfitability {
-  const hasPoValue = input.project.poGrandTotal != null && Number(input.project.poGrandTotal) > 0
-  const contractValue = hasPoValue ? Number(input.project.poGrandTotal) : Number(input.project.contractValue)
-  const basis = hasPoValue ? 'PO_GRAND_TOTAL' : 'PROJECT_CONTRACT_VALUE'
+  const hasRevenueBasis = input.project.revenueBasisValue != null && Number(input.project.revenueBasisValue) > 0
+  const contractValue = hasRevenueBasis ? Number(input.project.revenueBasisValue) : (input.project.poGrandTotal != null && Number(input.project.poGrandTotal) > 0 ? Number(input.project.poGrandTotal) : Number(input.project.contractValue))
+  const basis = hasRevenueBasis ? 'PO_NET_OF_TAX' : (input.project.poGrandTotal != null && Number(input.project.poGrandTotal) > 0 ? 'PO_GRAND_TOTAL' : 'PROJECT_CONTRACT_VALUE') as ProjectProfitability['basis']
   const activeInvoices = input.invoices.filter((invoice) => !EXCLUDED_INVOICE_STATUSES.has(invoice.status))
   const billedAmount = activeInvoices.reduce((sum, invoice) => { const credits = (invoice.creditNotes ?? []).reduce((cs, c) => cs + Number(c.amount), 0); return sum + Math.max(Number(invoice.totalAmount) - credits, 0) }, 0)
   const collectedAmount = activeInvoices.reduce((sum, invoice) => sum + invoice.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount), 0), 0)
@@ -124,6 +125,7 @@ export async function getProjectProfitability(workspaceId: string, projectId: st
       projectCode: true,
       projectName: true,
       contractValue: true,
+      revenueBasisValue: true,
       client: { select: { name: true } },
       customerPO: { select: { grandTotal: true } },
     },
@@ -161,6 +163,7 @@ export async function getProjectProfitability(workspaceId: string, projectId: st
       projectName: project.projectName,
       clientName: project.client.name,
       contractValue: Number(project.contractValue),
+      revenueBasisValue: Number(project.revenueBasisValue),
       poGrandTotal: project.customerPO ? Number(project.customerPO.grandTotal) : null,
     },
     invoices: invoices.map((invoice) => ({

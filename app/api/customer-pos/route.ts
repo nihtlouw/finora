@@ -14,7 +14,7 @@ export async function GET() {
     where: { workspaceId: c.workspace.id },
     include: {
       client: true,
-      quotation: { select: { id: true, proposalNumber: true, projectName: true, status: true, subtotalAmount: true, taxAmount: true, totalAmount: true } },
+      quotation: { select: { id: true, proposalNumber: true, projectName: true, status: true, subtotalAmount: true, taxAmount: true, totalAmount: true, roundedTotalAmount: true, overheadAmount: true, roundingAmount: true, taxIncluded: true } },
       project: { select: { id: true, projectCode: true, projectName: true, status: true } },
       verifiedBy: { select: { id: true, name: true, email: true } },
       cancelledBy: { select: { id: true, name: true, email: true } },
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     const quotation = await prisma.proposal.findFirst({
       where: { id: quotationId, clientId, client: { workspaceId: c.workspace.id } },
-      select: { id: true, proposalNumber: true, status: true, subtotalAmount: true, taxAmount: true, totalAmount: true },
+      select: { id: true, proposalNumber: true, status: true, subtotalAmount: true, taxAmount: true, totalAmount: true, roundedTotalAmount: true, currency: true, taxIncluded: true, overheadAmount: true, roundingAmount: true },
     })
     if (!quotation) return NextResponse.json({ error: 'Proposal referensi tidak ditemukan.' }, { status: 404 })
     if (quotation.status !== 'WON') return NextResponse.json({ error: 'Proposal harus WON sebelum direferensikan ke PO customer.' }, { status: 409 })
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     const quotationSubtotal = parseMoneyCents(quotation.subtotalAmount.toString())
     const quotationTax = parseMoneyCents(quotation.taxAmount.toString())
-    const quotationGrand = parseMoneyCents(quotation.totalAmount.toString())
+    const quotationGrand = parseMoneyCents((quotation.roundedTotalAmount || quotation.totalAmount).toString())
 
     const requestedSubtotal = b.totalAmount === undefined || b.totalAmount === ''
       ? quotationSubtotal
@@ -57,15 +57,17 @@ export async function POST(req: Request) {
     const requestedTax = b.taxAmount === undefined || b.taxAmount === ''
       ? quotationTax
       : positiveMoney(b.taxAmount, 'PPN PO').cents
+    const overhead = b.overheadAmount === undefined || b.overheadAmount === '' ? 0n : parseMoneyCents(String(b.overheadAmount))
+    const rounding = b.roundingAmount === undefined || b.roundingAmount === '' ? 0n : parseMoneyCents(String(b.roundingAmount))
     const requestedGrand = b.grandTotal === undefined || b.grandTotal === ''
-      ? requestedSubtotal + requestedTax
+      ? requestedSubtotal + requestedTax + overhead + rounding
       : positiveMoney(b.grandTotal, 'Grand total PO').cents
-
-    if (requestedGrand !== requestedSubtotal + requestedTax) {
-      throw new Error('Grand total PO harus sama dengan subtotal + PPN.')
+    if (requestedGrand !== requestedSubtotal + requestedTax + overhead + rounding) {
+      throw new Error('Grand total PO harus sama dengan subtotal + PPN + overhead + rounding.')
     }
+    if (b.paymentTermsSnapshot?.stages) { const stages=Array.isArray(b.paymentTermsSnapshot.stages)?b.paymentTermsSnapshot.stages:[]; const pct=stages.reduce((sum:any,x:any)=>sum+Number(x.percentage||0),0); if(Math.abs(pct-100)>0.001) throw new Error('Total persentase payment terms harus 100%.'); }
 
-    const variance = requestedGrand - quotationGrand
+    const variance: bigint = BigInt(requestedGrand) - BigInt(quotationGrand)
     const varianceReason = b.commercialVarianceReason ? String(b.commercialVarianceReason).trim() : ''
     if (variance !== 0n && !varianceReason) {
       return NextResponse.json({
@@ -109,6 +111,13 @@ export async function POST(req: Request) {
           totalAmount: centsToDecimal(requestedSubtotal),
           taxAmount: centsToDecimal(requestedTax),
           grandTotal: centsToDecimal(requestedGrand),
+          currency: String(b.currency || quotation.currency || 'IDR'),
+          taxIncluded: Boolean(b.taxIncluded ?? quotation.taxIncluded),
+          overheadAmount: centsToDecimal(overhead),
+          roundingAmount: centsToDecimal(rounding),
+          roundedGrandTotal: centsToDecimal(requestedGrand),
+          pricingMode: String(b.pricingMode || 'ITEM_SUM'),
+          paymentTermsSnapshot: b.paymentTermsSnapshot ?? null,
           quotationSubtotalSnapshot: centsToDecimal(quotationSubtotal),
           quotationTaxSnapshot: centsToDecimal(quotationTax),
           quotationGrandTotalSnapshot: centsToDecimal(quotationGrand),
