@@ -874,3 +874,19 @@ label{font-size:8px!important;font-weight:800!important;color:#67716c!important}
   .finora-auth-card{padding:22px 18px}
 }
 
+
+/* Reference v2 shell hardening — applies to the known-good shell DOM */
+.f-side{position:fixed!important;width:208px!important;min-width:208px!important;padding:16px 12px 12px!important}
+.f-side:hover,.f-side:focus-within{width:208px!important}
+.f-main{margin-left:208px!important}
+.f-brand-mark{font-size:0!important;display:block!important;background:linear-gradient(135deg,#d1b36f 0 38%,transparent 38% 49%,#3f967d 49% 76%,transparent 76%)!important;border-radius:5px!important;transform:skewY(-10deg)}
+.f-brand-mark:after{content:"";position:absolute;left:3px;bottom:2px;width:12px;height:5px;background:#e4ebe2;border-radius:1px;transform:skewY(-18deg)}
+.f-brand>div,.f-workspace>div,.f-nav-group-label,.f-nav-label,.f-user>div,.f-help-card strong,.f-help-card p{opacity:1!important;transform:none!important}
+.f-help-card{display:none!important}
+.f-nav-group-label{color:rgba(214,228,221,.38)!important}
+@media(max-width:780px){
+  .f-side{width:min(294px,88vw)!important;min-width:min(294px,88vw)!important}
+  .f-side:hover,.f-side:focus-within{width:min(294px,88vw)!important}
+  .f-main{margin-left:0!important}
+  .f-side.is-open .f-brand>div,.f-side.is-open .f-workspace>div,.f-side.is-open .f-nav-group-label,.f-side.is-open .f-nav-label,.f-side.is-open .f-user>div{opacity:1!important;transform:none!important}
+}
