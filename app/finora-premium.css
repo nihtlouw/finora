@@ -1455,3 +1455,72 @@ body{
   .f-stat-body strong{font-size:21px!important}
   .f-table td{font-size:11px!important}
 }
+
+
+/* ==========================================================================
+   UI REFINEMENT — calm neutral canvas, no card vibration
+   ========================================================================== */
+
+/* Neutral gray atmosphere at ~50% alpha, without reducing content opacity. */
+html{background:#dfe3e1!important}
+body{
+  background:
+    linear-gradient(rgba(130,138,135,.50),rgba(130,138,135,.50)),
+    linear-gradient(180deg,#eef1ef 0%,#e4e8e6 54%,#dfe3e1 100%)!important;
+  color:var(--f-ink)!important;
+}
+.f-app,.f-main{background:transparent!important}
+
+/* Keep the connected green identity in the content surfaces. */
+.f-card,
+.f-stat,
+.f-table-wrap,
+.f-subpanel,
+.f-section-card,
+.f-detail-card,
+.f-summary-card,
+.f-panel{
+  box-shadow:none!important;
+}
+
+/* Remove lift / vibration / hover movement from cards and controls. */
+.f-card,
+.f-card:not(.f-modal-card):hover,
+.f-stat,
+.f-stat:hover,
+.f-btn:hover:not(:disabled),
+.f-icon:hover,
+.f-nav-item,
+.f-content{
+  transform:none!important;
+}
+
+.f-card,
+.f-stat,
+.f-btn,
+.f-icon,
+.f-nav-item{
+  transition:none!important;
+}
+
+/* Remove the page-entry motion that can feel like shaking on navigation. */
+.f-content{
+  animation:none!important;
+}
+
+/* Remove decorative moving/hover elevation from card internals. */
+.f-card:before,
+.f-stat:after{
+  opacity:.65!important;
+}
+.f-card:not(.f-modal-card):hover{
+  border-color:#cbd7d0!important;
+}
+.f-stat:hover{
+  border-color:#cad6cf!important;
+}
+
+/* Buttons remain responsive through color/border, not movement. */
+.f-btn:hover:not(:disabled){
+  box-shadow:0 2px 7px rgba(20,49,42,.04)!important;
+}
