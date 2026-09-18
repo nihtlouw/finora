@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import FinoraShell from '@/components/finora-shell'
 import { getCurrentFinoraContext } from '@/lib/auth/current-user'
 import { prisma } from '@/lib/db/prisma'
-import { money } from '@/components/finora-ui'
+import { money, StatCard } from '@/components/finora-ui'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
  return <FinoraShell workspaceName={context.workspace.name} role={context.user.role} title="Dashboard"><div className="f-content">
   <div className="f-pagehead"><div><div className="f-eyebrow">Overview</div><h1>Selamat datang, {context.user.name?.split(' ')[0]||'Pengguna'}!</h1><p>Kelola arus kas, tagihan, dan kesehatan finansial bisnis Anda dari satu tempat.</p></div><div className="f-actions"><a className="f-btn" href="/reports">Lihat laporan</a><a className="f-btn primary" href="/proposals">+ Buat proposal</a></div></div>
   <div className="f-grid-4">
-   <Stat label="Total pemasukan" value={money(income)} trend="Pembayaran masuk" icon="↗"/><Stat label="Total pengeluaran" value={money(expense)} trend="Biaya tercatat" icon="↘"/><Stat label="Piutang aktif" value={money(receivable)} trend={`${unpaid.length} invoice`} icon="◫"/><Stat label="Arus kas bersih" value={money(income-expense)} trend="Income - Expense" icon="◎"/>
+   <StatCard label="Total pemasukan" value={money(income)} trend="Pembayaran masuk" icon="↗"/><StatCard label="Total pengeluaran" value={money(expense)} trend="Biaya tercatat" icon="↘"/><StatCard label="Piutang aktif" value={money(receivable)} trend={`${unpaid.length} invoice`} icon="◫"/><StatCard label="Arus kas bersih" value={money(income-expense)} trend="Income - Expense" icon="◎"/>
   </div><div style={{height:16}}/>
   <div className="f-kpi-row"><section className="f-card"><div className="f-card-head"><div><h3>Arus Kas</h3><p>6 bulan terakhir, berdasarkan transaksi pembayaran dan biaya yang disetujui.</p></div><span className="f-badge green">Live dari database</span></div><div className="f-chart-legend"><span><i className="f-chart-dot income"/>Masuk</span><span><i className="f-chart-dot expense"/>Keluar</span></div><div className="f-chart"><svg className="f-chart-svg" viewBox="0 0 760 210" preserveAspectRatio="none" aria-label="Grafik arus kas 6 bulan"><g><line x1="28" y1="42" x2="748" y2="42" className="f-chart-grid"/><line x1="28" y1="88" x2="748" y2="88" className="f-chart-grid"/><line x1="28" y1="134" x2="748" y2="134" className="f-chart-grid"/><line x1="28" y1="178" x2="748" y2="178" className="f-chart-grid"/></g><polyline points={poly(incomePoints)} className="f-chart-line-income"/><polyline points={poly(expensePoints)} className="f-chart-line-expense"/>{incomePoints.map(([x,y],i)=><circle key={`i${i}`} cx={x} cy={y} r="4" className="f-chart-point-income"/>)}{expensePoints.map(([x,y],i)=><circle key={`e${i}`} cx={x} cy={y} r="3.5" className="f-chart-point-expense"/>)}{monthBuckets.map((b,i)=><text key={b.label} x={28+(i*144)} y="199" textAnchor="middle" className="f-chart-axis">{b.label}</text>)}</svg></div></section>
   <section className="f-card"><div className="f-card-head"><div><h3>Aktivitas Terbaru</h3><p>Perubahan penting di workspace.</p></div></div><div className="f-list">{activities.length?activities.map(x=><div className="f-list-item" key={x.id}><div><strong>{x.title}</strong><div className="f-muted" style={{fontSize:11}}>{x.detail}</div></div><span className="f-muted" style={{fontSize:10}}>{x.when}</span></div>):<div className="f-empty">Belum ada aktivitas.</div>}</div></section></div>
@@ -38,5 +38,4 @@ export default async function DashboardPage() {
   <div className="f-footer">© 2026 Finora · Keuangan yang terkelola dengan baik membawa bisnis Anda lebih jauh.</div>
  </div></FinoraShell>
 }
-function Stat({label,value,trend,icon}:{label:string;value:string;trend:string;icon:string}){return <div className="f-stat"><div className="f-stat-icon">{icon}</div><div className="f-stat-body"><span>{label}</span><strong>{value}</strong><small>{trend}</small></div></div>}
 function Badge({children,tone}:{children:React.ReactNode;tone:'green'|'amber'|'red'}){return <span className={`f-badge ${tone}`}>{children}</span>}
