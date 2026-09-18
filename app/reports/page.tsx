@@ -34,6 +34,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const previousRange = getPreviousRange(range)
   const currentCashflows = await getCashflowsForRange(c.workspace.id, range)
   const current = summarizeCashflows(currentCashflows)
+  const previous = summarizeCashflows(previousCashflows)
   const asOf = range.endExclusive ?? new Date(Date.now() + 86400000)
   const balance = await getBalanceSheetSnapshot(c.workspace.id, asOf)
   const incomeChange = previousRange ? percentChange(current.income, previous.income) : null
@@ -46,6 +47,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const yearValue = params.period === 'year' ? params.date : String(new Date().getUTCFullYear())
   const customStart = params.period === 'custom' ? params.start : ''
   const customEnd = params.period === 'custom' ? params.end : ''
+  const filterQuery = (extra: Record<string, string | undefined>) => {
+    const q = new URLSearchParams()
+    Object.entries({ period: params.period || 'month', date: params.date || '', start: params.start || '', end: params.end || '', ...extra }).forEach(([k, v]) => v && q.set(k, v))
+    return q.toString()
+  }
+
   const reportSeries = Array.from({ length: 6 }, (_, index) => {
     const d = new Date()
     d.setUTCDate(1)
@@ -67,12 +74,6 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     { title: 'Aging Receivables', meta: 'Piutang yang perlu ditindaklanjuti', tone: 'amber', href: '/receivables' },
     { title: 'Aging Payables', meta: 'Kewajiban supplier dan jatuh tempo', tone: 'red', href: '/vendor-bills' },
   ]
-
-  const filterQuery = (extra: Record<string, string | undefined>) => {
-    const q = new URLSearchParams()
-    Object.entries({ period: params.period || 'month', date: params.date || '', start: params.start || '', end: params.end || '', ...extra }).forEach(([k, v]) => v && q.set(k, v))
-    return q.toString()
-  }
 
   return <FinoraShell workspaceName={c.workspace.name} role={c.user.role} title="Laporan">
     <div className="f-content f-reports-page">
