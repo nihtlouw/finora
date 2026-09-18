@@ -48,6 +48,27 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const yearValue = params.period === 'year' ? params.date : String(new Date().getUTCFullYear())
   const customStart = params.period === 'custom' ? params.start : ''
   const customEnd = params.period === 'custom' ? params.end : ''
+  const reportSeries = Array.from({ length: 6 }, (_, index) => {
+    const d = new Date()
+    d.setUTCDate(1)
+    d.setUTCMonth(d.getUTCMonth() - (5 - index))
+    return { key: String(d.getUTCFullYear()) + '-' + String(d.getUTCMonth()), label: new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone: 'UTC' }).format(d), income: 0, expense: 0 }
+  })
+  currentCashflows.forEach((row) => {
+    const d = new Date((row as any).transactionDate)
+    const bucket = reportSeries.find((item) => item.key === String(d.getUTCFullYear()) + '-' + String(d.getUTCMonth()))
+    if (!bucket) return
+    if ((row as any).type === 'INCOME') bucket.income += Number((row as any).amount)
+    if ((row as any).type === 'EXPENSE') bucket.expense += Number((row as any).amount)
+  })
+  const chartMax = Math.max(1, ...reportSeries.flatMap((item) => [item.income, item.expense]))
+  const reportCards = [
+    { title: 'Profit & Loss', meta: 'Ringkasan pendapatan, beban, dan laba', tone: 'green', href: '/api/reports/export?' + filterQuery({}) },
+    { title: 'Balance Sheet', meta: 'Snapshot aset, kas, piutang, dan ekuitas', tone: 'blue', href: '/api/reports/export?' + filterQuery({}) },
+    { title: 'Cash Flow Statement', meta: 'Arus masuk dan keluar berdasarkan kas', tone: 'green', href: '/api/reports/export?' + filterQuery({}) },
+    { title: 'Aging Receivables', meta: 'Piutang yang perlu ditindaklanjuti', tone: 'amber', href: '/receivables' },
+    { title: 'Aging Payables', meta: 'Kewajiban supplier dan jatuh tempo', tone: 'red', href: '/vendor-bills' },
+  ]
 
   const filterQuery = (extra: Record<string, string | undefined>) => {
     const q = new URLSearchParams()
@@ -56,84 +77,107 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   }
 
   return <FinoraShell workspaceName={c.workspace.name} role={c.user.role} title="Laporan">
-    <div className="f-content">
+    <div className="f-content f-reports-page">
       <PageHeader
-        eyebrow="Analisis"
+        eyebrow="CONTROL / FINANCIAL ANALYSIS"
         title="Laporan Keuangan"
-        description="P&L berbasis cash flow, balance sheet sederhana, dan perbandingan periode."
-        action={<div style={{display:'flex',gap:8,flexWrap:'wrap'}}><a className="f-btn" href="/reconciliation">Rekonsiliasi</a>{canExport && <a className="f-btn primary" href={`/api/reports/export?${filterQuery({})}`}>Export Paket CSV</a>}</div>}
+        description="Satu workspace untuk membaca performa kas, posisi keuangan, dan laporan operasional."
+        action={<div className="f-actions"><a className="f-btn" href="/reconciliation">Rekonsiliasi</a>{canExport && <a className="f-btn primary" href={'/api/reports/export?' + filterQuery({})}>Export Paket CSV</a>}</div>}
       />
 
-      <Card className="pad f-reports-filter">
-        <div className="f-grid-4">
-          <div><label>Periode</label><select className="f-input" name="period" form="report-filter" defaultValue={params.period || 'month'}><option value="month">Bulan</option><option value="quarter">Kuartal</option><option value="year">Tahun</option><option value="custom">Custom</option><option value="all">Semua</option></select></div>
-          <div><label>Nilai periode</label><input className="f-input" name="date" form="report-filter" type={params.period === 'month' || !params.period ? 'month' : 'text'} defaultValue={params.period === 'quarter' ? quarterValue : params.period === 'year' ? yearValue : params.period === 'all' || params.period === 'custom' ? '' : monthValue} placeholder={params.period === 'quarter' ? '2026-Q3' : params.period === 'year' ? '2026' : '2026-09'}/></div>
-          <div><label>Dari (custom)</label><input className="f-input" name="start" form="report-filter" type="date" defaultValue={customStart}/></div>
-          <div><label>Sampai (custom)</label><input className="f-input" name="end" form="report-filter" type="date" defaultValue={customEnd}/></div>
+      <div className="f-report-tabs" aria-label="Kategori laporan">
+        <a className="active" href="/reports">Financial</a>
+        <a href="/cashflow">Transactions</a>
+        <a href="/invoices">Receivables</a>
+        <a href="/vendor-bills">Payables</a>
+      </div>
+
+      <Card className="f-report-filter-card">
+        <div className="f-report-filter-top">
+          <div><div className="f-eyebrow">PERIODE AKTIF</div><strong>{range.label}</strong></div>
+          <div className="f-report-quick-filters">
+            <a className={!['quarter','year','all','custom'].includes(params.period || '') ? 'active' : ''} href={'?' + filterQuery({ period:'month', date: monthValue })}>Bulan</a>
+            <a className={params.period === 'quarter' ? 'active' : ''} href={'?' + filterQuery({ period:'quarter', date: quarterValue })}>Kuartal</a>
+            <a className={params.period === 'year' ? 'active' : ''} href={'?' + filterQuery({ period:'year', date: yearValue })}>Tahun</a>
+            <a className={params.period === 'all' ? 'active' : ''} href={'?' + filterQuery({ period:'all' })}>Semua</a>
+          </div>
         </div>
-        <div style={{display:'flex',gap:10,marginTop:12,flexWrap:'wrap',alignItems:'center'}}>
-          <a className="f-btn" href={`?${filterQuery({ period:'month', date: monthValue })}`}>Bulan</a>
-          <a className="f-btn" href={`?${filterQuery({ period:'quarter', date: quarterValue })}`}>Kuartal</a>
-          <a className="f-btn" href={`?${filterQuery({ period:'year', date: yearValue })}`}>Tahun</a>
-          <a className="f-btn" href={`?${filterQuery({ period:'all' })}`}>Semua</a>
-          <form id="report-filter" method="get" style={{display:'inline'}}><button className="f-btn primary" type="submit">Terapkan filter</button></form>
-          <span className="f-muted">Periode aktif: <strong>{range.label}</strong></span>
-        </div>
+        <form id="report-filter" method="get" className="f-report-filter-grid">
+          <label>Periode<select className="f-input" name="period" defaultValue={params.period || 'month'}><option value="month">Bulan</option><option value="quarter">Kuartal</option><option value="year">Tahun</option><option value="custom">Custom</option><option value="all">Semua</option></select></label>
+          <label>Nilai periode<input className="f-input" name="date" type={params.period === 'month' || !params.period ? 'month' : 'text'} defaultValue={params.period === 'quarter' ? quarterValue : params.period === 'year' ? yearValue : params.period === 'all' || params.period === 'custom' ? '' : monthValue} placeholder={params.period === 'quarter' ? '2026-Q3' : params.period === 'year' ? '2026' : '2026-09'} /></label>
+          <label>Dari<input className="f-input" name="start" type="date" defaultValue={customStart}/></label>
+          <label>Sampai<input className="f-input" name="end" type="date" defaultValue={customEnd}/></label>
+          <button className="f-btn primary f-report-apply" type="submit">Terapkan</button>
+        </form>
       </Card>
 
       <div className="f-grid-3 f-reports-stats">
-        <StatCard label="Pendapatan" value={money(current.income)} trend={`${pct(incomeChange)} vs periode sebelumnya`} icon="↗"/>
-        <StatCard label="Beban" value={money(current.expense)} trend={`${pct(expenseChange)} vs periode sebelumnya`} icon="↘"/>
-        <StatCard label="Laba bersih" value={money(current.net)} trend={`${pct(netChange)} vs periode sebelumnya`} icon="◎"/>
+        <StatCard label="Pendapatan" value={money(current.income)} trend={pct(incomeChange) + ' vs periode sebelumnya'} icon="↗"/>
+        <StatCard label="Beban" value={money(current.expense)} trend={pct(expenseChange) + ' vs periode sebelumnya'} icon="↘"/>
+        <StatCard label="Laba bersih" value={money(current.net)} trend={pct(netChange) + ' vs periode sebelumnya'} icon="◎"/>
       </div>
 
-      <div className="f-grid-3 f-reports-panels">
-        <Card className="pad">
-          <div className="f-card-head"><div><h3>Profit &amp; Loss</h3><p>Basis kas untuk {range.label.toLowerCase()}; bukan laporan akrual penuh.</p></div></div>
-          <div style={{padding:18}}>
-            <div className="f-progress"><span style={{width:`${totalFlow ? Math.min(100, current.income / totalFlow * 100) : 0}%`}}/></div>
-            <div className="f-list-item"><span>Pendapatan</span><strong>{money(current.income)}</strong></div>
-            <div className="f-list-item"><span>Beban</span><strong>{money(current.expense)}</strong></div>
-            <div className="f-list-item"><span>Laba bersih</span><strong>{money(current.net)}</strong></div>
+      <div className="f-report-analytics-grid">
+        <Card className="f-report-cash-card">
+          <div className="f-card-head"><div><h3>Cash Flow</h3><p>Pergerakan kas enam bulan terakhir berdasarkan transaksi tercatat.</p></div><Badge tone="green">Live</Badge></div>
+          <div className="f-report-chart">
+            <div className="f-report-chart-grid"><span/><span/><span/><span/></div>
+            <div className="f-report-bars">
+              {reportSeries.map(item => <div className="f-report-month" key={item.key}>
+                <div className="f-report-bars-inner">
+                  <span className="income" style={{height: Math.max(4, item.income / chartMax * 100) + '%'}} title={'Masuk ' + money(item.income)}/>
+                  <span className="expense" style={{height: Math.max(4, item.expense / chartMax * 100) + '%'}} title={'Keluar ' + money(item.expense)}/>
+                </div>
+                <small>{item.label}</small>
+              </div>)}
+            </div>
           </div>
+          <div className="f-report-chart-legend"><span><i className="income"/>Masuk {money(current.income)}</span><span><i className="expense"/>Keluar {money(current.expense)}</span></div>
         </Card>
-        <Card>
-          <div className="f-card-head"><div><h3>Beban per kategori</h3><p>Top cost drivers pada periode terpilih.</p></div></div>
-          <div className="f-list">{current.byCategory.slice(0,8).map(([k,v])=><div className="f-list-item" key={k}><span>{k}</span><strong>{money(v)}</strong></div>)}{current.byCategory.length===0&&<div className="f-muted" style={{padding:18}}>Belum ada beban.</div>}</div>
-        </Card>
-        <Card>
-          <div className="f-card-head"><div><h3>Comparison</h3><p>Periode aktif dibanding periode sebelumnya.</p></div></div>
-          <div className="f-list">
-            <div className="f-list-item"><span>Pendapatan</span><strong>{money(current.income)}</strong></div>
-            <div className="f-list-item"><span>Pendapatan sebelumnya</span><strong>{previousRange ? money(previous.income) : '—'}</strong></div>
-            <div className="f-list-item"><span>Perubahan</span><strong>{pct(incomeChange)}</strong></div>
-            <div className="f-list-item"><span>Beban</span><strong>{money(current.expense)}</strong></div>
-            <div className="f-list-item"><span>Beban sebelumnya</span><strong>{previousRange ? money(previous.expense) : '—'}</strong></div>
-            <div className="f-list-item"><span>Perubahan beban</span><strong>{pct(expenseChange)}</strong></div>
-            <div className="f-list-item"><span>Laba bersih</span><strong>{money(current.net)}</strong></div>
-            <div className="f-list-item"><span>Laba sebelumnya</span><strong>{previousRange ? money(previous.net) : '—'}</strong></div>
-            <div className="f-list-item"><span>Perubahan laba</span><strong>{pct(netChange)}</strong></div>
+
+        <Card className="f-report-breakdown-card">
+          <div className="f-card-head"><div><h3>Beban per kategori</h3><p>Cost driver terbesar periode aktif.</p></div></div>
+          <div className="f-report-breakdown-list">
+            {current.byCategory.slice(0,6).map(([k,v]) => {
+              const pctValue = current.expense ? Math.round(v / current.expense * 100) : 0
+              return <div className="f-report-breakdown-row" key={k}><div><span>{k}</span><strong>{money(v)}</strong></div><div className="f-progress"><span style={{width: pctValue + '%'}}/></div></div>
+            })}
+            {!current.byCategory.length && <div className="f-empty"><strong>Belum ada beban</strong>Belum ada transaksi expense pada periode ini.</div>}
           </div>
         </Card>
       </div>
 
-      <div className="f-reports-lower">
-      <Card>
-        <div className="f-card-head"><div><h3>Balance Sheet — sederhana</h3><p>Snapshot per {formatDateParam(new Date(asOf.getTime()-86400000))}. Saldo awal, kewajiban, aset tetap, dan modal belum dimodelkan penuh.</p></div><Badge tone="blue">Cash basis</Badge></div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:12,padding:18}}>
-          <div className="f-list-item"><span>Kas bersih</span><strong>{money(balance.cash)}</strong></div>
-          <div className="f-list-item"><span>Piutang usaha</span><strong>{money(balance.receivables)}</strong></div>
-          <div className="f-list-item"><span>Total aset</span><strong>{money(balance.assets)}</strong></div>
-          <div className="f-list-item"><span>Total liabilitas</span><strong>{money(balance.liabilities)}</strong></div>
-          <div className="f-list-item"><span>Ekuitas sederhana</span><strong>{money(balance.equity)}</strong></div>
+      <div className="f-report-lower-grid">
+        <Card>
+          <div className="f-card-head"><div><h3>Balance Sheet — sederhana</h3><p>Snapshot per {formatDateParam(new Date(asOf.getTime()-86400000))}. Beberapa akun belum dimodelkan penuh.</p></div><Badge tone="blue">Cash basis</Badge></div>
+          <div className="f-report-balance-grid">
+            <div><span>Kas bersih</span><strong>{money(balance.cash)}</strong></div>
+            <div><span>Piutang usaha</span><strong>{money(balance.receivables)}</strong></div>
+            <div><span>Total aset</span><strong>{money(balance.assets)}</strong></div>
+            <div><span>Total liabilitas</span><strong>{money(balance.liabilities)}</strong></div>
+            <div><span>Ekuitas sederhana</span><strong>{money(balance.equity)}</strong></div>
+          </div>
+        </Card>
+
+        <Card className="f-report-health-card">
+          <div className="f-card-head"><div><h3>Financial health</h3><p>Indikator operasional dari proporsi arus masuk terhadap beban.</p></div></div>
+          <div className="f-report-health">
+            <div className="f-health-ring" style={{'--health': health * 3.6 + 'deg'} as React.CSSProperties}><strong>{health}</strong><span>/ 100</span></div>
+            <div><Badge tone={current.income>=current.expense?'green':'red'}>{current.income>=current.expense?'Sehat':'Perlu perhatian'}</Badge><p className="f-muted">Ini bukan rasio akuntansi formal.</p></div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="f-report-library">
+        <div className="f-card-head"><div><h3>Report Library</h3><p>Dokumen dan tampilan laporan yang paling sering digunakan tim finance.</p></div></div>
+        <div className="f-report-library-list">
+          {reportCards.map(report => <div className="f-report-library-item" key={report.title}>
+            <div className={'f-report-doc-icon ' + report.tone}>▤</div>
+            <div className="f-report-library-copy"><strong>{report.title}</strong><span>{report.meta}</span><small>{range.label}</small></div>
+            <div className="f-report-library-actions"><a className="f-btn soft" href={report.href}>{report.title.includes('Aging') ? 'Buka' : 'Export'}</a>{!report.title.includes('Aging') && <a className="f-btn" href={report.href}>Detail</a>}</div>
+          </div>)}
         </div>
       </Card>
-
-      <Card>
-        <div className="f-card-head"><div><h3>Financial health</h3><p>Sinyal sederhana dari rasio arus masuk terhadap beban.</p></div></div>
-        <div style={{padding:18}}><div style={{fontSize:44,fontWeight:900,color:current.income>=current.expense?'#0f6d5f':'#c75b4b'}}>{health}</div><p className="f-muted">Skor bukan rasio akuntansi formal; gunakan sebagai indikator operasional.</p><Badge tone={current.income>=current.expense?'green':'red'}>{current.income>=current.expense?'Sehat':'Perlu perhatian'}</Badge></div>
-      </Card>
-    </div>
     </div>
   </FinoraShell>
 }
