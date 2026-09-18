@@ -68,6 +68,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     if (b.dueDate !== undefined) data.dueDate = b.dueDate ? dateOnly(b.dueDate, 'Jatuh tempo payment milestone') : null
     if (b.notes !== undefined) data.notes = b.notes ? String(b.notes).trim() : null
+    if (b.triggerCode !== undefined) data.triggerCode = b.triggerCode ? String(b.triggerCode).trim() : null
+    if (b.dueDays !== undefined) data.dueDays = b.dueDays === '' || b.dueDays === null ? null : Number(b.dueDays)
+    if (b.retentionMonths !== undefined) data.retentionMonths = b.retentionMonths === '' || b.retentionMonths === null ? null : Number(b.retentionMonths)
+    if (b.retentionPercent !== undefined) data.retentionPercent = b.retentionPercent === '' || b.retentionPercent === null ? null : Number(b.retentionPercent)
+    if (b.conditionNotes !== undefined) data.conditionNotes = b.conditionNotes ? String(b.conditionNotes).trim() : null
     if (b.status !== undefined) {
       const status = String(b.status)
       if (!statuses.includes(status)) throw new Error('Status payment milestone tidak valid.')

@@ -37,6 +37,7 @@ export default async function ProposalDetailPage({ params }: PageProps) {
       invoice: true,
       sections: { orderBy: { sortOrder: 'asc' }, include: { items: { orderBy: { id: 'asc' } } } },
       items: { orderBy: { id: 'asc' } },
+      revisions: { orderBy: { revisionNumber: 'desc' } },
     },
   })
   if (!proposal) notFound()
@@ -92,6 +93,8 @@ export default async function ProposalDetailPage({ params }: PageProps) {
           </div>
         </Card>
       </div>
+
+      {proposal.revisions.length > 0 && <Card><div className="f-card-head"><div><h3>Revision history</h3><p>Snapshot immutable untuk audit perubahan quotation.</p></div><span className="f-badge neutral">{proposal.revisions.length} revision</span></div><div className="f-list">{proposal.revisions.map((r)=><div className="f-list-item" key={r.id}><span>Revision {r.revisionNumber} · {r.status}</span><strong>{money(Number(r.roundedTotalAmount || r.totalAmount))}</strong></div>)}</div></Card>}
 
       <Card>
         <div className="f-card-head"><div><h3>BOQ & spesifikasi</h3><p>{sections.length} section · {allItems.length} item. Klik detail item untuk membuka spesifikasi teknis lengkap.</p></div><span className="f-badge neutral">Project quotation</span></div>

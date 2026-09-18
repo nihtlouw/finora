@@ -13,3 +13,7 @@ npx tsx scripts/qa-enterprise.mjs
 ```
 
 If that passes, the package script can later be switched permanently to `tsx scripts/qa-enterprise.mjs`.
+
+## Phase 3.5F
+
+Execution, commercial controls, project BOQ snapshot, evidence-gated billing, payment terms metadata, contract versions, explicit billing rebaseline, and project document versioning are documented in `PHASE3.5F-EXECUTION-COMMERCIAL-CONTROLS.md`.

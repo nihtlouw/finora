@@ -4,6 +4,7 @@ import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-us
 import { dateOnly } from '@/lib/validation/finance'
 import { writeAuditLog } from '@/lib/audit'
 import { syncProjectFinancialStatuses } from '@/lib/project-financial-sync'
+import { getBillingReadiness } from '@/lib/project-execution'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (!milestone) return NextResponse.json({ error: 'Billing milestone tidak ditemukan.' }, { status: 404 })
     if (milestone.invoice) return NextResponse.json({ error: `Billing milestone ini sudah memiliki invoice ${milestone.invoice.invoiceNumber}.`, invoice: milestone.invoice }, { status: 409 })
     if (!['READY'].includes(milestone.status)) return NextResponse.json({ error: 'Billing milestone harus berstatus READY sebelum dibuatkan invoice.' }, { status: 409 })
+    const readiness = await getBillingReadiness(projectId, milestoneId)
+    if (!readiness.ready) return NextResponse.json({ error: 'Billing milestone belum memenuhi execution/evidence gate.', missing: readiness.missing }, { status: 409 })
 
     const dueSource = milestone.paymentMilestones[0]?.dueDate ?? milestone.plannedDate ?? new Date()
     const dueDate = dateOnly(new Date(dueSource).toISOString().slice(0, 10), 'Jatuh tempo invoice')

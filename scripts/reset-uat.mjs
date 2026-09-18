@@ -37,6 +37,14 @@ const tables = [
   '"Proposal"',
   '"ClientVendor"',
   '"Budget"',
+  '"ContractChangeOrder"',
+  '"BillingRebaseline"',
+  '"ProjectDocument"',
+  '"ProjectBOQItem"',
+  '"ProjectBOQSection"',
+  '"BillingMilestoneCondition"',
+  '"ProjectExecutionMilestone"',
+  '"ProjectContractVersion"',
   '"AuditLog"',
 ];
 

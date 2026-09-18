@@ -133,6 +133,13 @@ model Proposal {
   taxPercent      Decimal        @default(0) @db.Decimal(5,2)
   taxAmount       Decimal        @default(0) @db.Decimal(18,2)
   totalAmount    Decimal        @db.Decimal(18,2)
+  currency       String         @default("IDR")
+  taxIncluded    Boolean        @default(false)
+  overheadAmount Decimal         @default(0) @db.Decimal(18,2)
+  roundingAmount Decimal         @default(0) @db.Decimal(18,2)
+  roundedTotalAmount Decimal     @default(0) @db.Decimal(18,2)
+  pricingMode    String         @default("ITEM_SUM")
+  commercialNotes String?       @db.Text
   termsAndConditions String?      @db.Text
   validUntil     DateTime       @db.Date
   client         ClientVendor   @relation(fields: [clientId], references: [id])
@@ -143,6 +150,26 @@ model Proposal {
   projects       Project[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  revisions      ProposalRevision[]
+}
+
+model ProposalRevision {
+  id              String   @id @default(uuid()) @db.Uuid
+  proposalId      String   @db.Uuid
+  revisionNumber  Int
+  quotationNumber String?
+  reason          String?  @db.Text
+  status          String   @default("DRAFT")
+  snapshot        Json
+  subtotalAmount  Decimal  @default(0) @db.Decimal(18,2)
+  taxAmount       Decimal  @default(0) @db.Decimal(18,2)
+  totalAmount     Decimal  @default(0) @db.Decimal(18,2)
+  roundedTotalAmount Decimal @default(0) @db.Decimal(18,2)
+  createdByUserId String?  @db.Uuid
+  createdAt       DateTime @default(now())
+  proposal        Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  @@unique([proposalId, revisionNumber])
+  @@index([proposalId, status])
 }
 
 model ProposalSection {
@@ -192,6 +219,13 @@ model CustomerPO {
   totalAmount    Decimal      @db.Decimal(18,2)
   taxAmount      Decimal      @default(0) @db.Decimal(18,2)
   grandTotal     Decimal      @db.Decimal(18,2)
+  currency       String       @default("IDR")
+  taxIncluded    Boolean      @default(false)
+  overheadAmount Decimal      @default(0) @db.Decimal(18,2)
+  roundingAmount Decimal      @default(0) @db.Decimal(18,2)
+  roundedGrandTotal Decimal   @default(0) @db.Decimal(18,2)
+  pricingMode    String       @default("ITEM_SUM")
+  paymentTermsSnapshot Json?
   quotationSubtotalSnapshot Decimal @default(0) @db.Decimal(18,2)
   quotationTaxSnapshot Decimal @default(0) @db.Decimal(18,2)
   quotationGrandTotalSnapshot Decimal @default(0) @db.Decimal(18,2)
@@ -231,6 +265,8 @@ model Project {
   startDate      DateTime?    @db.Date
   targetEndDate  DateTime?    @db.Date
   contractValue  Decimal      @default(0) @db.Decimal(18,2)
+  revenueBasisValue Decimal    @default(0) @db.Decimal(18,2)
+  contractVersion Int         @default(1)
   status         String       @default("PLANNED")
   notes          String?      @db.Text
   workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
@@ -246,6 +282,11 @@ model Project {
   documents ProjectDocument[]
   payrollAllocations PayrollAllocation[]
   vendorBills VendorBill[]
+  boqSections ProjectBOQSection[]
+  boqItems ProjectBOQItem[]
+  executionMilestones ProjectExecutionMilestone[]
+  contractVersions ProjectContractVersion[]
+  billingRebaselines BillingRebaseline[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -298,9 +339,12 @@ model BillingMilestone {
   plannedDate DateTime? @db.Date
   status      String   @default("PLANNED")
   notes       String?  @db.Text
+  triggerCode String?  @db.VarChar(80)
+  triggerDescription String? @db.Text
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   invoice     Invoice?
   paymentMilestones PaymentMilestone[]
+  conditions BillingMilestoneCondition[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -319,6 +363,11 @@ model PaymentMilestone {
   amount             Decimal  @db.Decimal(18,2)
   dueDate            DateTime? @db.Date
   status             String   @default("PLANNED")
+  triggerCode        String?  @db.VarChar(80)
+  dueDays            Int?
+  retentionMonths    Int?
+  retentionPercent   Decimal? @db.Decimal(5,2)
+  conditionNotes     String?  @db.Text
   notes              String?  @db.Text
   project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   billingMilestone   BillingMilestone? @relation(fields: [billingMilestoneId], references: [id], onDelete: SetNull)
@@ -520,6 +569,7 @@ model ContractChangeOrder {
   approvedAmount     Decimal  @default(0) @db.Decimal(18,2)
   reason             String   @db.Text
   notes              String?  @db.Text
+  contractVersionId String? @db.Uuid
   requestedByUserId  String   @db.Uuid
   decidedByUserId    String?  @db.Uuid
   decidedAt          DateTime?
@@ -527,6 +577,7 @@ model ContractChangeOrder {
   workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   requestedBy        User     @relation("ChangeOrderRequester", fields: [requestedByUserId], references: [id])
   decidedBy          User?    @relation("ChangeOrderDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  contractVersion   ProjectContractVersion? @relation(fields: [contractVersionId], references: [id], onDelete: SetNull)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   @@unique([workspaceId, projectId, changeNumber])
@@ -759,6 +810,12 @@ model ProjectDocument {
   projectId    String   @db.Uuid
   title        String
   category     String   @default("GENERAL")
+  documentKey  String?
+  version      Int      @default(1)
+  documentDate DateTime? @db.Date
+  tags         Json?
+  source       String?
+  isCurrent    Boolean  @default(true)
   fileName     String
   mimeType     String
   sizeBytes    Int
@@ -768,5 +825,110 @@ model ProjectDocument {
   project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploadedBy   User @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
   createdAt    DateTime @default(now())
+  @@unique([projectId, documentKey, version])
   @@index([workspaceId, projectId, category])
+  @@index([workspaceId, projectId, documentKey, isCurrent])
 }
+
+model ProjectBOQSection {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @db.Uuid
+  sourceSectionId String? @db.Uuid
+  code        String
+  name        String
+  description String? @db.Text
+  sortOrder   Int      @default(0)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items       ProjectBOQItem[]
+  @@index([projectId, sortOrder])
+}
+
+model ProjectBOQItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  projectId     String   @db.Uuid
+  sectionId     String   @db.Uuid
+  sourceItemId  String?  @db.Uuid
+  description   String
+  category      String   @default("SERVICE")
+  brand         String?
+  itemType      String?
+  specification String? @db.Text
+  plannedQty    Decimal  @db.Decimal(18,3)
+  unit          String
+  unitPrice     Decimal  @db.Decimal(18,2)
+  plannedAmount Decimal  @db.Decimal(18,2)
+  actualQty     Decimal  @default(0) @db.Decimal(18,3)
+  actualAmount  Decimal  @default(0) @db.Decimal(18,2)
+  progressPct   Decimal  @default(0) @db.Decimal(5,2)
+  notes         String? @db.Text
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  section      ProjectBOQSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  @@index([projectId, sectionId])
+}
+
+model ProjectExecutionMilestone {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   String   @db.Uuid
+  sequence    Int
+  code        String
+  name        String
+  status      String   @default("PLANNED")
+  plannedDate DateTime? @db.Date
+  actualDate  DateTime? @db.Date
+  progressPct Decimal  @default(0) @db.Decimal(5,2)
+  notes       String? @db.Text
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  billingConditions BillingMilestoneCondition[]
+  @@unique([projectId, sequence])
+  @@unique([projectId, code])
+  @@index([projectId, status])
+}
+
+model BillingMilestoneCondition {
+  id String @id @default(uuid()) @db.Uuid
+  billingMilestoneId String @db.Uuid
+  executionMilestoneId String? @db.Uuid
+  requiredDocumentCategory String?
+  label String
+  conditionType String @default("EXECUTION")
+  required Boolean @default(true)
+  billingMilestone BillingMilestone @relation(fields: [billingMilestoneId], references: [id], onDelete: Cascade)
+  executionMilestone ProjectExecutionMilestone? @relation(fields: [executionMilestoneId], references: [id], onDelete: SetNull)
+  @@index([billingMilestoneId])
+}
+
+model ProjectContractVersion {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  versionNumber Int
+  sourceType String
+  sourceId String? @db.Uuid
+  effectiveDate DateTime @db.Date
+  contractValue Decimal @db.Decimal(18,2)
+  notes String? @db.Text
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  changeOrders ContractChangeOrder[]
+  billingRebaselines BillingRebaseline[]
+  createdAt DateTime @default(now())
+  @@unique([projectId, versionNumber])
+  @@index([projectId, effectiveDate])
+}
+
+model BillingRebaseline {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  contractVersionId String? @db.Uuid
+  changeOrderId String? @db.Uuid
+  oldContractValue Decimal @db.Decimal(18,2)
+  newContractValue Decimal @db.Decimal(18,2)
+  status String @default("DRAFT")
+  reason String @db.Text
+  billingSnapshot Json
+  paymentSnapshot Json
+  appliedAt DateTime?
+  appliedByUserId String? @db.Uuid
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractVersion ProjectContractVersion? @relation(fields: [contractVersionId], references: [id], onDelete: SetNull)
+  @@index([projectId, status])
+}
+

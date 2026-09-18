@@ -38,18 +38,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       if (revisedCents < activeInvoicedCents) return NextResponse.json({ error: 'Nilai kontrak hasil change order tidak boleh di bawah nilai invoice aktif.' }, { status: 409 })
 
       const updated = await prisma.$transaction(async (tx) => {
-        const co = await tx.contractChangeOrder.update({ where: { id }, data: { status: 'APPROVED', approvedAmount: approved, decidedAt: new Date(), decidedByUserId: c.user.id } })
-        const updatedProject = await tx.project.update({ where: { id: row.projectId }, data: { contractValue: centsToDecimal(revisedCents) }, select: { contractValue: true } })
-        const billing = await tx.billingMilestone.findMany({ where: { projectId: row.projectId, status: { in: ['PLANNED', 'READY'] } }, select: { id: true, percentage: true } })
-        for (const milestone of billing) {
-          const pctBps = parseMoneyCents(milestone.percentage.toString())
-          await tx.billingMilestone.update({ where: { id: milestone.id }, data: { amount: centsToDecimal((revisedCents * pctBps) / 10000n) } })
-        }
-        const payments = await tx.paymentMilestone.findMany({ where: { projectId: row.projectId, status: { in: ['PLANNED', 'DUE'] } }, select: { id: true, percentage: true } })
-        for (const milestone of payments) {
-          const pctBps = parseMoneyCents(milestone.percentage.toString())
-          await tx.paymentMilestone.update({ where: { id: milestone.id }, data: { amount: centsToDecimal((revisedCents * pctBps) / 10000n) } })
-        }
+        const nextVersion = row.project.contractVersion + 1
+        const contractVersion = await tx.projectContractVersion.create({ data: { projectId: row.projectId, versionNumber: nextVersion, sourceType: 'CHANGE_ORDER', effectiveDate: row.effectiveDate, contractValue: centsToDecimal(revisedCents), notes: `Contract version dari change order ${row.changeNumber}.` } })
+        const co = await tx.contractChangeOrder.update({ where: { id }, data: { status: 'APPROVED', approvedAmount: approved, decidedAt: new Date(), decidedByUserId: c.user.id, contractVersionId: contractVersion.id } })
+        await tx.project.update({ where: { id: row.projectId }, data: { contractValue: centsToDecimal(revisedCents), revenueBasisValue: centsToDecimal(revisedCents), contractVersion: nextVersion } })
         return co
       })
       await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action, entityType: 'CHANGE_ORDER', entityId: id, metadata: { changeType, approvedAmount: approved.toString(), signedAmount: centsToDecimal(signedApprovedCents) } })

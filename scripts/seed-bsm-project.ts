@@ -8,6 +8,7 @@ config({ path: '.env' })
 // Finora's Prisma 7 setup uses @prisma/adapter-pg in lib/db/prisma.ts.
 // Reuse that configured singleton instead of instantiating PrismaClient directly.
 const { prisma } = await import('../lib/db/prisma')
+const { createProjectExecutionFoundation, snapshotProposalBOQ } = await import('../lib/project-execution')
 
 function parseCsv(value: string | undefined) {
   return (value ?? '')
@@ -114,7 +115,19 @@ async function main() {
         status: 'VERIFIED',
         totalAmount: proposal.subtotalAmount,
         taxAmount: proposal.taxAmount,
-        grandTotal: proposal.totalAmount,
+        grandTotal: proposal.roundedTotalAmount || proposal.totalAmount,
+        currency: proposal.currency,
+        taxIncluded: proposal.taxIncluded,
+        overheadAmount: proposal.overheadAmount,
+        roundingAmount: proposal.roundingAmount,
+        roundedGrandTotal: proposal.roundedTotalAmount,
+        paymentTermsSnapshot: {
+          stages: [
+            { name: 'DP', percentage: 50, trigger: 'PO_RELEASED', dueDays: 7 },
+            { name: 'Progress', percentage: 45, trigger: 'FAT_AND_PRE_DELIVERY' },
+            { name: 'Retention', percentage: 5, trigger: 'RETENTION_END', retentionMonths: 2 },
+          ],
+        },
         remarks:
           'UAT simulation: PO customer yang mengkonfirmasi quotation BSM kompleks.',
       },
@@ -146,26 +159,48 @@ async function main() {
       `Project  : ${project.projectCode} (${project.status}) [existing]`,
     )
   } else {
-    project = await prisma.project.create({
-      data: {
-        workspaceId: membership.workspaceId,
-        clientId: client.id,
-        proposalId: proposal.id,
-        customerPoId: po.id,
-        projectCode,
-        projectName:
-          proposal.projectName ||
-          'GD PAV KARTIKA I RSPAD GATOT SUBROTO PUSKESAD',
-        location: proposal.projectLocation || 'Jakarta Pusat',
-        contractValue: proposal.totalAmount,
-        status: 'PLANNED',
-        notes: 'UAT simulation project foundation dari PO customer.',
-      },
+    project = await prisma.$transaction(async tx => {
+      const created = await tx.project.create({
+        data: {
+          workspaceId: membership.workspaceId, clientId: client.id, proposalId: proposal.id, customerPoId: po.id, projectCode,
+          projectName: proposal.projectName || 'GD PAV KARTIKA I RSPAD GATOT SUBROTO PUSKESAD',
+          location: proposal.projectLocation || 'Jakarta Pusat', contractValue: po.grandTotal, revenueBasisValue: po.grandTotal.sub(po.taxAmount), status: 'PLANNED', notes: 'UAT simulation project foundation dari PO customer.',
+        },
+      })
+      await snapshotProposalBOQ(tx, created.id, proposal.id)
+      await createProjectExecutionFoundation(tx, created.id)
+      await tx.projectContractVersion.create({ data: { projectId: created.id, versionNumber: 1, sourceType: 'CUSTOMER_PO', sourceId: po.id, effectiveDate: po.poDate, contractValue: created.contractValue, notes: 'Initial contract snapshot dari PO UAT.' } })
+      return created
     })
 
     console.log(
       `Project  : ${project.projectCode} (${project.status}) [created]`,
     )
+  }
+
+  const boqCount = await prisma.projectBOQSection.count({ where: { projectId: project.id } })
+  if (boqCount === 0) await prisma.$transaction(async tx => snapshotProposalBOQ(tx, project.id, proposal.id))
+  const executionCount = await prisma.projectExecutionMilestone.count({ where: { projectId: project.id } })
+  if (executionCount === 0) await prisma.$transaction(async tx => createProjectExecutionFoundation(tx, project.id))
+  const versionCount = await prisma.projectContractVersion.count({ where: { projectId: project.id } })
+  if (versionCount === 0) await prisma.projectContractVersion.create({ data: { projectId: project.id, versionNumber: 1, sourceType: 'CUSTOMER_PO', sourceId: po.id, effectiveDate: po.poDate, contractValue: project.contractValue, notes: 'Initial contract snapshot dari PO UAT.' } })
+
+  const billingCount = await prisma.billingMilestone.count({ where: { projectId: project.id } })
+  if (billingCount === 0) {
+    const stages = [
+      { sequence: 1, name: 'DP 50% — setelah PO terbit', percentage: 50, triggerCode: 'PO_RELEASED', triggerDescription: 'DP 50% dari PO terbit; pembayaran 7 hari setelah invoice masuk.', conditions: [] },
+      { sequence: 2, name: 'Progress 45% — FAT + material sebelum delivery', percentage: 45, triggerCode: 'FAT_AND_PRE_DELIVERY', triggerDescription: 'Progress 45% setelah FAT dan material kabel dll sebelum delivery onsite.', conditions: [{ label: 'FAT completed', executionMilestoneCode: 'FAT' }, { label: 'FAT evidence', documentCategory: 'FAT' }] },
+      { sequence: 3, name: 'Retention 5% — masa retensi 2 bulan', percentage: 5, triggerCode: 'RETENTION_END', triggerDescription: 'Pelunasan 5% setelah masa retensi 2 bulan.', conditions: [{ label: 'BAP / BAST completed', executionMilestoneCode: 'BAP_BAST' }, { label: 'BAP / BAST evidence', documentCategory: 'BAP_BAST' }] },
+    ]
+    for (const stage of stages) {
+      const amount = Number(project.contractValue) * stage.percentage / 100
+      const bm = await prisma.billingMilestone.create({ data: { projectId: project.id, sequence: stage.sequence, name: stage.name, percentage: stage.percentage.toFixed(2), amount: amount.toFixed(2), status: 'PLANNED', triggerCode: stage.triggerCode, triggerDescription: stage.triggerDescription } })
+      for (const condition of stage.conditions) {
+        const em = condition.executionMilestoneCode ? await prisma.projectExecutionMilestone.findFirst({ where: { projectId: project.id, code: condition.executionMilestoneCode } }) : null
+        await prisma.billingMilestoneCondition.create({ data: { billingMilestoneId: bm.id, executionMilestoneId: em?.id ?? null, requiredDocumentCategory: condition.documentCategory ?? null, label: condition.label, conditionType: condition.executionMilestoneCode && condition.documentCategory ? 'EXECUTION_AND_DOCUMENT' : condition.executionMilestoneCode ? 'EXECUTION' : 'DOCUMENT', required: true } })
+      }
+      await prisma.paymentMilestone.create({ data: { projectId: project.id, billingMilestoneId: bm.id, sequence: stage.sequence, name: stage.name, percentage: stage.percentage.toFixed(2), amount: amount.toFixed(2), status: 'PLANNED', triggerCode: stage.triggerCode, dueDays: stage.sequence === 1 ? 7 : null, retentionMonths: stage.sequence === 3 ? 2 : null, retentionPercent: stage.sequence === 3 ? 5 : null, conditionNotes: stage.triggerDescription } })
+    }
   }
 
   console.log(`Proposal : ${proposal.proposalNumber}`)

@@ -4,6 +4,7 @@ import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-us
 import { dateOnly, requireText } from '@/lib/validation/finance'
 import { centsToDecimal, parseMoneyCents } from '@/lib/validation/finance'
 import { writeAuditLog } from '@/lib/audit'
+import { getBillingReadiness } from '@/lib/project-execution'
 
 export const dynamic = 'force-dynamic'
 const statuses = ['PLANNED', 'READY', 'BILLED', 'CANCELLED']
@@ -47,10 +48,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     if (b.plannedDate !== undefined) data.plannedDate = b.plannedDate ? dateOnly(b.plannedDate, 'Tanggal billing milestone') : null
     if (b.notes !== undefined) data.notes = b.notes ? String(b.notes).trim() : null
+    if (b.triggerCode !== undefined) data.triggerCode = b.triggerCode ? String(b.triggerCode).trim() : null
+    if (b.triggerDescription !== undefined) data.triggerDescription = b.triggerDescription ? String(b.triggerDescription).trim() : null
     if (b.status !== undefined) {
       const status = String(b.status)
       if (!statuses.includes(status)) throw new Error('Status billing milestone tidak valid.')
       if (status !== 'READY' || existing.status !== 'PLANNED') return NextResponse.json({ error: 'Perubahan status manual hanya PLANNED → READY. Status BILLED/CANCELLED akan dikendalikan oleh lifecycle berikutnya.' }, { status: 409 })
+      const readiness = await getBillingReadiness(id, milestoneId)
+      if (!readiness.ready) return NextResponse.json({ error: 'Billing belum memenuhi execution/evidence gate.', missing: readiness.missing }, { status: 409 })
       data.status = status
     }
     const row = await prisma.billingMilestone.update({ where: { id: milestoneId }, data, include: { invoice: true } })

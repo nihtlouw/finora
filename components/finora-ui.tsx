@@ -9,5 +9,5 @@ export function StatCard({label,value,trend,icon}:{label:string;value:string|num
 export function Badge({children,tone='neutral'}:{children:React.ReactNode;tone?:'green'|'blue'|'amber'|'red'|'neutral'}){
  return <span className={`f-badge ${tone}`}>{children}</span>
 }
-export function Card({children,className='' }:{children:React.ReactNode;className?:string}){ return <section className={`f-card ${className}`}>{children}</section> }
+export function Card({children,className='',id}:{children:React.ReactNode;className?:string;id?:string}){ return <section id={id} className={`f-card ${className}`}>{children}</section> }
 export const money=(n:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n).replace('IDR','Rp')

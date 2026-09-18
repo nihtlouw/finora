@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { writeAuditLog } from '@/lib/audit'
 import { getCurrentFinoraContext } from '@/lib/auth/current-user'
-import { dateOnly, lineItemsTotalCents, requireText, positiveMoney, optionalText } from '@/lib/validation/finance'
-import { calculateCommercialTotals, percentageBps, bpsToDecimal } from '@/lib/validation/commercial'
+import { dateOnly, lineItemsTotalCents, requireText, positiveMoney, optionalText, parseMoneyCents, centsToDecimal } from '@/lib/validation/finance'
+import { percentageBps, bpsToDecimal } from '@/lib/validation/commercial'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +33,14 @@ function validateSections(sections: any[]) {
       if (!['MATERIAL','SERVICE','OTHER'].includes(category)) throw new Error(`Kategori item ${sectionIndex + 1}.${itemIndex + 1} tidak valid.`)
     })
   })
+}
+
+function commercialWithOverhead(subtotalCents: bigint, discountBps: bigint, taxBps: bigint, overheadCents: bigint, roundingCents: bigint, taxIncluded: boolean) {
+  const discount = (subtotalCents * discountBps + 5000n) / 10000n
+  const net = subtotalCents > discount ? subtotalCents - discount : 0n
+  const tax = taxIncluded ? ((net * taxBps + 5000n) / 10000n) : ((net * taxBps + 5000n) / 10000n)
+  const total = net + overheadCents + tax
+  return { subtotal: centsToDecimal(subtotalCents), discount: centsToDecimal(discount), tax: centsToDecimal(tax), total: centsToDecimal(total), rounded: centsToDecimal(total + roundingCents), overhead: centsToDecimal(overheadCents), rounding: centsToDecimal(roundingCents) }
 }
 
 function sectionCreateData(sections: any[]) {
@@ -79,7 +87,7 @@ export async function POST(req: Request) {
     validateSections(sections)
     const items = flattenItems(sections)
     const subtotalCents = lineItemsTotalCents(items)
-    const commercial = calculateCommercialTotals(subtotalCents, percentageBps(b.discountPercent ?? 0, 'Diskon'), percentageBps(b.taxPercent ?? 0, 'Pajak'))
+    const discountBps = percentageBps(b.discountPercent ?? 0, 'Diskon'); const taxBps = percentageBps(b.taxPercent ?? 0, 'Pajak'); const overheadCents = parseMoneyCents(String(b.overheadAmount ?? '0')); const roundingCents = parseMoneyCents(String(b.roundingAmount ?? '0')); const commercial = commercialWithOverhead(subtotalCents, discountBps, taxBps, overheadCents, roundingCents, Boolean(b.taxIncluded))
     const validUntil = dateOnly(b.validUntil, 'Berlaku sampai')
     if (validUntil < new Date(new Date().toISOString().slice(0, 10))) throw new Error('Masa berlaku proposal tidak boleh di masa lalu.')
     const proposalNumber = String(b.proposalNumber ?? '').trim() || `PR-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`
@@ -92,12 +100,19 @@ export async function POST(req: Request) {
         projectLocation: optionalText(b.projectLocation, 250),
         scopeSummary: optionalText(b.scopeSummary, 5000),
         status: 'DRAFT',
-        subtotalAmount: commercial.subtotalAmount,
-        discountPercent: bpsToDecimal(commercial.discountPercentBps),
-        discountAmount: commercial.discountAmount,
-        taxPercent: bpsToDecimal(commercial.taxPercentBps),
-        taxAmount: commercial.taxAmount,
-        totalAmount: commercial.totalAmount,
+        subtotalAmount: commercial.subtotal,
+        discountPercent: bpsToDecimal(discountBps),
+        discountAmount: commercial.discount,
+        taxPercent: bpsToDecimal(taxBps),
+        taxAmount: commercial.tax,
+        totalAmount: commercial.total,
+        currency: String(b.currency || 'IDR'),
+        taxIncluded: Boolean(b.taxIncluded),
+        overheadAmount: commercial.overhead,
+        roundingAmount: commercial.rounding,
+        roundedTotalAmount: commercial.rounded,
+        pricingMode: String(b.pricingMode || 'ITEM_SUM'),
+        commercialNotes: optionalText(b.commercialNotes, 5000),
         termsAndConditions: optionalText(b.termsAndConditions, 5000),
         validUntil,
         sections: { create: sectionCreateData(sections) },

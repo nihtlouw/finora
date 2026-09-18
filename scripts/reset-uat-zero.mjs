@@ -44,6 +44,15 @@ const businessTables = [
   "ExpenseAllocation",
   "CashflowTransaction",
   "Budget",
+  "ContractChangeOrder",
+  "BillingRebaseline",
+  "ProjectDocument",
+  "ProjectBOQItem",
+  "ProjectBOQSection",
+  "BillingMilestoneCondition",
+  "ProjectExecutionMilestone",
+  "ProjectContractVersion",
+  "ProposalRevision",
 ];
 
 const client = new Client({
