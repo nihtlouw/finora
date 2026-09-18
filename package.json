@@ -23,7 +23,9 @@
     "seed:bsm-project": "node --experimental-strip-types scripts/seed-bsm-project.ts",
     "seed:bsm-complex-quotation": "node --experimental-strip-types scripts/seed-bsm-complex-quotation.ts",
     "seed:expenses": "node scripts/seed-expense-cases.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "seed:uat-po-hurip-ss3": "node --experimental-strip-types scripts/seed-uat-po-hurip-ss3.ts",
+    "qa:uat-po-hurip-ss3": "node --experimental-strip-types scripts/qa-uat-po-hurip-ss3.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.2",
