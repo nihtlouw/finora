@@ -3,7 +3,7 @@ dotenv.config({ path: '.env.local' })
 dotenv.config({ path: '.env' })
 
 import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../generated/prisma/client'
+import { PrismaClient } from '../generated/prisma/client.ts'
 
 function splitEmails(value: unknown): string[] {
   return String(value || '')
