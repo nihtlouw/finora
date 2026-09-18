@@ -33,6 +33,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   }
   const previousRange = getPreviousRange(range)
   const currentCashflows = await getCashflowsForRange(c.workspace.id, range)
+  const previousCashflows = previousRange ? await getCashflowsForRange(c.workspace.id, previousRange) : []
   const current = summarizeCashflows(currentCashflows)
   const previous = summarizeCashflows(previousCashflows)
   const asOf = range.endExclusive ?? new Date(Date.now() + 86400000)
