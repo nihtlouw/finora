@@ -25,7 +25,9 @@
     "seed:expenses": "node scripts/seed-expense-cases.mjs",
     "postinstall": "prisma generate",
     "seed:uat-po-hurip-ss3": "node --experimental-strip-types scripts/seed-uat-po-hurip-ss3.ts",
-    "qa:uat-po-hurip-ss3": "node --experimental-strip-types scripts/qa-uat-po-hurip-ss3.ts"
+    "qa:uat-po-hurip-ss3": "node --experimental-strip-types scripts/qa-uat-po-hurip-ss3.ts",
+    "seed:uat-three-projects": "node --experimental-strip-types scripts/seed-uat-three-projects.ts",
+    "qa:uat-three-projects": "node --experimental-strip-types scripts/qa-uat-three-projects.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.2",
