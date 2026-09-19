@@ -154,6 +154,7 @@ const scenarios: Scenario[] = [
           { category: 'SERVICE', description: 'Temporary office, workshop, warehouse, utilities', qty: 1, unit: 'LOT', unitPrice: 24850000 },
           { category: 'SERVICE', description: 'Safety, APD, scaffolding and temporary power', qty: 1, unit: 'LOT', unitPrice: 30000000 },
           { category: 'SERVICE', description: 'Documentation, as-built drawing and test report', qty: 1, unit: 'LOT', unitPrice: 40000000 },
+          { category: 'SERVICE', description: 'SLO / NIDI, electrical compliance and closeout preparation', qty: 1, unit: 'LOT', unitPrice: 55399000 },
         ],
       },
       {
@@ -558,6 +559,12 @@ async function ensurePO(workspaceId: string, ownerId: string, scenario: Scenario
   const existing = await prisma.customerPO.findFirst({ where: { workspaceId, poNumber: scenario.poNumber } })
   if (existing) {
     if (existing.clientId !== clientId || existing.quotationId !== proposalId) throw new Error(`PO ${scenario.poNumber} relasinya tidak cocok.`)
+    if (existing.status !== 'VERIFIED') {
+      return prisma.customerPO.update({
+        where: { id: existing.id },
+        data: { status: 'VERIFIED', verifiedAt: existing.verifiedAt ?? new Date(), verifiedByUserId: existing.verifiedByUserId ?? ownerId },
+      })
+    }
     return existing
   }
 
@@ -844,6 +851,11 @@ async function addInvoiceWithPayment(
     })
   }
 
+  await prisma.billingMilestone.update({
+    where: { id: billingMilestoneId },
+    data: { status: paidAmount >= amount ? 'PAID' : 'BILLED' },
+  })
+
   return invoice
 }
 
@@ -955,6 +967,10 @@ async function applyScenarioState(workspaceId: string, ownerId: string, vendorId
 }
 
 async function ensureProject(workspaceId: string, ownerId: string, scenario: Scenario, clientId: string, proposalId: string, poId: string) {
+  const linkedProject = await prisma.project.findUnique({ where: { customerPoId: poId } })
+  if (linkedProject && linkedProject.projectCode !== scenario.projectCode) {
+    throw new Error(`PO ${scenario.poNumber} sudah terhubung ke project ${linkedProject.projectCode}; seed dihentikan agar tidak membuat duplicate project.`)
+  }
   let project = await prisma.project.findFirst({ where: { workspaceId, projectCode: scenario.projectCode } })
   if (!project) {
     project = await prisma.$transaction(async (tx) => {
