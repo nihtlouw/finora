@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 type Client = {
   id: string
@@ -95,9 +96,13 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
   const [category, setCategory] = useState('ALL')
   const [archived, setArchived] = useState(false)
   const [form, setForm] = useState<any>({ ...empty })
+  const [initialForm, setInitialForm] = useState<any>({ ...empty })
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const availableCategories = useMemo(() => {
     const source = type === 'VENDOR'
@@ -108,6 +113,12 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
 
     return Array.from(new Set(source))
   }, [type])
+
+  const formCategoryOptions = useMemo(() => {
+    const options = [...categoryOptions(form.type)]
+    if (form.category && !options.includes(form.category)) options.unshift(form.category)
+    return options
+  }, [form.type, form.category])
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -136,15 +147,26 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
 
   function openNew() {
     setForm({ ...empty })
+    setInitialForm({ ...empty })
     setOpen(true)
     setNotice('')
   }
 
   function edit(x: Client) {
     setForm({ ...x })
+    setInitialForm({ ...x })
     setOpen(true)
     setNotice('')
   }
+
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (!editId || open) return
+    const target = rows.find((row) => row.id === editId)
+    if (!target) return
+    edit(target)
+    router.replace(pathname, { scroll: false })
+  }, [searchParams, rows, open, router, pathname])
 
   function selectTab(nextType: string, showArchived = false) {
     setType(nextType)
@@ -199,6 +221,32 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
     } else {
       setNotice(data.error || 'Gagal.')
     }
+  }
+
+  async function restore(x: Client) {
+    if (!canManage(role)) return
+    setSaving(true)
+    setNotice('')
+    try {
+      const response = await fetch(`/api/clients/${x.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...x, isActive: true }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Gagal mengaktifkan kontak.')
+      setRows((current) => current.map((row) => row.id === x.id ? data.client : row))
+      setNotice('Kontak diaktifkan kembali.')
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Gagal mengaktifkan kontak.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function closeDrawer() {
+    setOpen(false)
+    setNotice('')
   }
 
   return (
@@ -328,7 +376,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                     <div className="f-client-identity">
                       <div className="f-client-avatar">{initials(x.name)}</div>
                       <div>
-                        <strong>{x.name}</strong>
+                        <Link href={`/clients/${x.id}`} className="f-client-name-link"><strong>{x.name}</strong></Link>
                         <small>{x.picName || 'PIC belum diisi'}</small>
                       </div>
                     </div>
@@ -348,8 +396,8 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                   </td>
                   <td>
                     <div className="f-client-contact">
-                      <strong>{x.picName || 'PIC belum diisi'}</strong>
-                      <small>{contactLine(x)}</small>
+                      <strong>{x.email || 'Kontak belum diisi'}</strong>
+                      <small>{x.phone || (x.email ? 'Telepon belum diisi' : 'Tambahkan email / telepon')}</small>
                     </div>
                   </td>
                   <td>
@@ -370,6 +418,9 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                             )}
                             {canDelete(role) && x.isActive && (
                               <button type="button" onClick={() => archive(x)}>Arsipkan</button>
+                            )}
+                            {!x.isActive && canManage(role) && (
+                              <button type="button" onClick={() => restore(x)}>Aktifkan kembali</button>
                             )}
                           </div>
                         </details>
@@ -401,7 +452,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                   {workspace.name ? ` Workspace: ${workspace.name}.` : ''}
                 </p>
               </div>
-              <button type="button" className="f-client-drawer-close" onClick={() => setOpen(false)} aria-label="Tutup">
+              <button type="button" className="f-client-drawer-close" onClick={closeDrawer} aria-label="Tutup">
                 ×
               </button>
             </div>
@@ -420,7 +471,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                   Kategori *
                   <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                     <option value="">Pilih kategori</option>
-                    {categoryOptions(form.type).map((option) => <option key={option} value={option}>{option}</option>)}
+                    {formCategoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 </label>
 
@@ -455,6 +506,16 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
                   <input value={form.npwp} onChange={(e) => setForm({ ...form, npwp: e.target.value })} />
                 </label>
 
+                {form.id && (
+                  <label className="f-client-field">
+                    Status
+                    <select value={form.isActive ? 'ACTIVE' : 'ARCHIVED'} onChange={(e) => setForm({ ...form, isActive: e.target.value === 'ACTIVE' })}>
+                      <option value="ACTIVE">Aktif</option>
+                      <option value="ARCHIVED">Diarsipkan</option>
+                    </select>
+                  </label>
+                )}
+
                 <label className="f-client-field full">
                   Alamat
                   <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
@@ -462,7 +523,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
               </div>
 
               <div className="f-client-form-actions">
-                <button type="button" className="f-btn" onClick={() => setForm({ ...empty })}>
+                <button type="button" className="f-btn" onClick={() => setForm({ ...initialForm })}>
                   Reset
                 </button>
                 <button className="f-btn primary" disabled={saving || !canManage(role)}>
