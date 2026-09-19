@@ -417,18 +417,25 @@ function sourceSnapshot(s: Scenario) {
 }
 
 async function ensureClient(workspaceId: string, data: Scenario['client']) {
-  return prisma.clientVendor.upsert({
-    where: { id: (await prisma.clientVendor.findFirst({ where: { workspaceId, name: data.name, type: 'CLIENT' }, select: { id: true } }))?.id ?? '__missing__' },
-    update: {
-      category: data.category,
-      offerings: data.offerings,
-      email: data.email,
-      phone: data.phone ?? null,
-      picName: data.picName ?? null,
-      address: data.address,
-      isActive: true,
-    },
-    create: {
+  const existing = await prisma.clientVendor.findFirst({
+    where: { workspaceId, name: data.name, type: 'CLIENT' },
+  })
+  if (existing) {
+    return prisma.clientVendor.update({
+      where: { id: existing.id },
+      data: {
+        category: data.category,
+        offerings: data.offerings,
+        email: data.email,
+        phone: data.phone ?? null,
+        picName: data.picName ?? null,
+        address: data.address,
+        isActive: true,
+      },
+    })
+  }
+  return prisma.clientVendor.create({
+    data: {
       workspaceId,
       name: data.name,
       type: 'CLIENT',
