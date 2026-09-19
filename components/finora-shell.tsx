@@ -66,31 +66,7 @@ export default function FinoraShell({children,workspaceName="Workspace",role="VI
    <div className="f-side-bottom"><div className="f-help-card"><strong>Financial operations, satu workspace.</strong><p>Proposal, project, billing, biaya, dan kontrol finansial dalam satu alur.</p></div><div className="f-user"><UserButton appearance={{elements:{userButtonAvatarBox:"f-user-avatar"}}}/><div><strong>Profil</strong><small>{roleLabel(role)}</small></div><SignOutButton><button type="button" className="f-btn">Keluar</button></SignOutButton></div></div>
   </aside>
   {mobileOpen&&<button className="f-mobile-scrim" aria-label="Tutup menu" onClick={()=>setMobileOpen(false)}/>}
-  <main className="f-main"><header className="f-top">
-   <div className="f-top-left">
-    <button type="button" className="f-mobile-menu" onClick={()=>setMobileOpen(true)} aria-label="Buka menu"><Icon name="menu" size={18}/></button>
-    <div className="f-top-context" aria-label="Lokasi halaman">
-     <span className="f-top-context-kicker">Workspace</span><span className="f-top-context-sep">/</span><strong>{title}</strong>
-    </div>
-    <div className="f-search-wrap">
-     <form className="f-top-search" onSubmit={submitSearch}>
-      <span><Icon name="search" size={15}/></span>
-      <input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} placeholder="Cari halaman atau modul..." aria-label="Cari halaman Finora"/>
-      <kbd>Ctrl K</kbd>
-     </form>
-     {focused&&search&&<div className="f-search-results">{matches.length?matches.slice(0,6).map(i=><button type="button" key={i.href} onClick={()=>{router.push(i.href);setSearch("");setFocused(false)}}><span><Icon name={i.icon} size={15}/></span><div><strong>{i.label}</strong><small>{i.href}</small></div><Icon name="chevron" size={14}/></button>):<div className="f-search-empty">Tidak ada halaman yang cocok.</div>}</div>}
-    </div>
-   </div>
-   <div className="f-top-right">
-    <button type="button" className="f-icon" onClick={()=>setNotifications(v=>!v)} aria-label="Notifikasi"><Icon name="bell" size={16}/>{notificationCount>0&&<span className="f-notification-dot">{notificationCount>9?"9+":notificationCount}</span>}</button>
-    <span className="f-date">{new Intl.DateTimeFormat("id-ID",{weekday:"short",day:"2-digit",month:"short",year:"numeric"}).format(new Date())}</span>
-    <div className="f-top-account">
-      <div className="f-top-account-label"><span>Role</span><strong>{roleLabel(role)}</strong></div>
-      <UserButton appearance={{elements:{userButtonAvatarBox:"f-top-user-button"}}}/>
-    </div>
-    {notifications&&<div className="f-notification-panel"><div className="f-card-head"><div><h3>Notifikasi</h3><p>Prioritas yang perlu ditinjau.</p></div></div><Link href="/receivables" onClick={()=>setNotifications(false)} className="f-list-item"><span>Invoice overdue</span><strong>{notificationCount}</strong></Link><Link href="/expenses" onClick={()=>setNotifications(false)} className="f-list-item"><span>Biaya menunggu approval</span><strong>Lihat</strong></Link></div>}
-   </div>
-  </header>{children}</main>
+  <main className="f-main"><header className="f-top"><div className="f-top-left"><button type="button" className="f-mobile-menu" onClick={()=>setMobileOpen(true)} aria-label="Buka menu"><Icon name="menu" size={18}/></button><div className="f-search-wrap"><form className="f-top-search" onSubmit={submitSearch}><span><Icon name="search" size={15}/></span><input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)} onFocus={()=>setFocused(true)} placeholder="Cari halaman..." aria-label="Cari halaman Finora"/><kbd>Ctrl K</kbd></form>{focused&&search&&<div className="f-search-results">{matches.length?matches.slice(0,6).map(i=><button type="button" key={i.href} onClick={()=>{router.push(i.href);setSearch("");setFocused(false)}}><span><Icon name={i.icon} size={15}/></span><div><strong>{i.label}</strong><small>{i.href}</small></div><Icon name="chevron" size={14}/></button>):<div className="f-search-empty">Tidak ada halaman yang cocok.</div>}</div>}</div></div><div className="f-top-right"><button type="button" className="f-icon" onClick={()=>setNotifications(v=>!v)} aria-label="Notifikasi"><Icon name="bell" size={16}/>{notificationCount>0&&<span className="f-notification-dot">{notificationCount>9?"9+":notificationCount}</span>}</button><span className="f-date">{new Intl.DateTimeFormat("id-ID",{dateStyle:"full"}).format(new Date())}</span><span className="f-title">{title}</span>{notifications&&<div className="f-notification-panel"><div className="f-card-head"><div><h3>Notifikasi</h3><p>Prioritas yang perlu ditinjau.</p></div></div><Link href="/receivables" onClick={()=>setNotifications(false)} className="f-list-item"><span>Invoice overdue</span><strong>{notificationCount}</strong></Link><Link href="/expenses" onClick={()=>setNotifications(false)} className="f-list-item"><span>Biaya menunggu approval</span><strong>Lihat</strong></Link></div>}</div></header>{children}</main>
  </div>
 }
 function roleLabel(role:string){return role==="OWNER"?"Owner":role==="FINANCE"?"Finance":role==="SALES"?"Sales":"Viewer"}
