@@ -60,45 +60,156 @@ export default async function ClientVendorDetailPage({ params }: PageProps) {
 
   return <FinoraShell workspaceName={context.workspace.name} role={context.user.role} title={isClient ? 'Detail Klien' : 'Detail Vendor'}>
     <div className="f-content f-detail-page">
-      <div className="f-breadcrumb no-print"><Link href="/clients">Klien & Vendor</Link><span>›</span><strong>{contact.name}</strong></div>
-      <PageHeader eyebrow="Master Data / Detail" title={contact.name} description={isClient ? 'Ringkasan hubungan bisnis, invoice, pembayaran, dan histori aktivitas klien.' : 'Ringkasan vendor, expense, approval, dan histori aktivitas operasional.'} action={<div className="f-actions"><Badge tone={contact.isActive?'green':'neutral'}>{contact.isActive?'Aktif':'Diarsipkan'}</Badge>{canManageClients(context.user.role)&&<Link href={`/clients?edit=${contact.id}`} className="f-btn primary">Edit Kontak</Link>}<Link href="/clients" className="f-btn">← Kembali</Link></div>} />
-
-      <section className="f-detail-hero">
-        <div className="f-detail-identity"><div className={`f-contact-avatar ${isClient?'client':'vendor'}`}>{contact.name.slice(0,1).toUpperCase()}</div><div><div className="f-eyebrow">{isClient?'Klien':'Vendor'}</div><h2>{contact.name}</h2><p>{contact.picName ? `PIC: ${contact.picName}` : 'PIC belum diisi'}{contact.email ? ` · ${contact.email}` : ''}</p></div></div>
-        <div className="f-detail-actions">{isClient&&<a className="f-btn primary" href="/proposals">＋ Buat Proposal</a>}{!isClient&&<a className="f-btn primary" href="/expenses">＋ Catat Expense</a>}{contact.email&&<a className="f-btn" href={`mailto:${contact.email}`}>Kirim email</a>}</div>
-      </section>
-
-      <div className="f-grid-4 f-detail-kpis">
-        <div className="f-stat"><div className="f-stat-icon">▧</div><div className="f-stat-body"><span>{isClient?'Total invoice':'Total expense'}</span><strong>{money(isClient?invoiceTotal:expenseTotal)}</strong><small>{isClient?`${invoices.length} invoice`:`${expenses.length} expense`}</small></div></div>
-        <div className="f-stat"><div className="f-stat-icon">✓</div><div className="f-stat-body"><span>{isClient?'Sudah dibayar':'Sudah disetujui'}</span><strong>{money(isClient?paidTotal:approvedExpenseTotal)}</strong><small>{isClient?`${paymentCount} pembayaran`:`${expenses.filter(x=>x.status==='APPROVED').length} disetujui`}</small></div></div>
-        <div className="f-stat"><div className="f-stat-icon">◌</div><div className="f-stat-body"><span>{isClient?'Outstanding':'Menunggu approval'}</span><strong>{money(isClient?outstandingTotal:pendingExpenseTotal)}</strong><small>{isClient?'Sisa tagihan':'Masih pending'}</small></div></div>
-        <div className="f-stat"><div className="f-stat-icon">▤</div><div className="f-stat-body"><span>Aktivitas</span><strong>{proposals.length + invoices.length + paymentCount + expenses.length}</strong><small>Aktivitas terkait</small></div></div>
+      <div className="f-breadcrumb no-print">
+        <Link href="/clients">Klien & Vendor</Link><span>›</span><strong>{contact.name}</strong>
       </div>
+
+      <PageHeader
+        eyebrow="Master Data / Detail"
+        title={contact.name}
+        description={isClient
+          ? 'Ringkasan hubungan bisnis, invoice, pembayaran, dan histori aktivitas klien.'
+          : 'Ringkasan vendor, expense, approval, dan histori aktivitas operasional.'}
+        showInfoTip={false}
+        action={
+          <div className="f-actions">
+            <Badge tone={contact.isActive ? 'green' : 'neutral'}>{contact.isActive ? 'Aktif' : 'Diarsipkan'}</Badge>
+            {canManageClients(context.user.role) && (
+              <Link href={`/clients?edit=${contact.id}`} className="f-btn primary">Edit Kontak</Link>
+            )}
+            <Link href="/clients" className="f-btn">← Kembali</Link>
+          </div>
+        }
+      />
+
+      <section className="f-detail-kpis f-grid-4">
+        <div className="f-stat"><div className="f-stat-icon">▧</div><div className="f-stat-body"><span>{isClient ? 'Total invoice' : 'Total expense'}</span><strong>{money(isClient ? invoiceTotal : expenseTotal)}</strong><small>{isClient ? `${invoices.length} invoice` : `${expenses.length} expense`}</small></div></div>
+        <div className="f-stat"><div className="f-stat-icon">✓</div><div className="f-stat-body"><span>{isClient ? 'Sudah dibayar' : 'Sudah disetujui'}</span><strong>{money(isClient ? paidTotal : approvedExpenseTotal)}</strong><small>{isClient ? `${paymentCount} pembayaran` : `${expenses.filter(x=>x.status==='APPROVED').length} disetujui`}</small></div></div>
+        <div className="f-stat"><div className="f-stat-icon">◌</div><div className="f-stat-body"><span>{isClient ? 'Outstanding' : 'Menunggu approval'}</span><strong>{money(isClient ? outstandingTotal : pendingExpenseTotal)}</strong><small>{isClient ? 'Sisa tagihan' : 'Masih pending'}</small></div></div>
+        <div className="f-stat"><div className="f-stat-icon">▤</div><div className="f-stat-body"><span>Aktivitas</span><strong>{proposals.length + invoices.length + paymentCount + expenses.length}</strong><small>Aktivitas terkait</small></div></div>
+      </section>
 
       <div className="f-detail-main-grid">
         <Card>
-          <div className="f-card-head"><div><h3>Profil kontak</h3><p>Informasi master yang dipakai seluruh transaksi.</p></div></div>
-          <div className="f-detail-profile-grid">
-            <div><span>Jenis</span><strong>{isClient?'Klien':'Vendor'}</strong></div><div><span>Kategori</span><strong>{contact.category||'—'}</strong></div><div><span>PIC</span><strong>{contact.picName||'—'}</strong></div><div><span>Email</span><strong>{contact.email||'—'}</strong></div><div><span>Telepon</span><strong>{contact.phone||'—'}</strong></div><div><span>NPWP</span><strong>{contact.npwp||'—'}</strong></div><div><span>Terdaftar</span><strong>{dateId(contact.createdAt)}</strong></div><div className="full"><span>{isClient?'Bidang / kebutuhan utama':'Produk / jasa yang disediakan'}</span><strong>{contact.offerings||'Belum diisi'}</strong></div><div className="full"><span>Alamat</span><strong>{contact.address||'Alamat belum diisi'}</strong></div>
+          <div className="f-card-head">
+            <div>
+              <h3>Profil kontak</h3>
+              <p>Master data yang dipakai lintas proposal, PO, project, invoice, biaya, dan histori transaksi.</p>
+            </div>
+          </div>
+          <div className="f-detail-profile-grid f-detail-profile-grid-wide">
+            <div><span>Jenis</span><strong>{isClient ? 'Klien' : 'Vendor'}</strong></div>
+            <div><span>Status</span><strong>{contact.isActive ? 'Aktif' : 'Diarsipkan'}</strong></div>
+            <div><span>Kategori</span><strong>{contact.category || 'Belum dikategorikan'}</strong></div>
+            <div><span>PIC</span><strong>{contact.picName || 'Belum diisi'}</strong></div>
+            <div><span>Email</span><strong>{contact.email || 'Belum diisi'}</strong></div>
+            <div><span>Telepon</span><strong>{contact.phone || 'Belum diisi'}</strong></div>
+            <div><span>NPWP</span><strong>{contact.npwp || 'Belum diisi'}</strong></div>
+            <div><span>Terdaftar</span><strong>{dateId(contact.createdAt)}</strong></div>
+            <div className="full"><span>{isClient ? 'Bidang / kebutuhan utama' : 'Produk / jasa yang disediakan'}</span><strong>{contact.offerings || 'Belum diisi'}</strong></div>
+            <div className="full"><span>Alamat</span><strong>{contact.address || 'Alamat belum diisi'}</strong></div>
           </div>
         </Card>
+
         <Card>
-          <div className="f-card-head"><div><h3>Ringkasan aktivitas</h3><p>Snapshot hubungan bisnis saat ini.</p></div></div>
-          <div className="f-list"><div className="f-list-item"><span>Proposal</span><strong>{proposals.length}</strong></div><div className="f-list-item"><span>Invoice</span><strong>{invoices.length}</strong></div>{isClient?<div className="f-list-item"><span>Pembayaran</span><strong>{paymentCount}</strong></div>:<div className="f-list-item"><span>Expense</span><strong>{expenses.length}</strong></div>}<div className="f-list-item"><span>Status</span><Badge tone={contact.isActive?'green':'neutral'}>{contact.isActive?'Aktif':'Diarsipkan'}</Badge></div></div>
+          <div className="f-card-head">
+            <div>
+              <h3>Ringkasan aktivitas</h3>
+              <p>Snapshot hubungan bisnis saat ini.</p>
+            </div>
+          </div>
+          <div className="f-list">
+            <div className="f-list-item"><span>Proposal</span><strong>{proposals.length}</strong></div>
+            <div className="f-list-item"><span>Invoice</span><strong>{invoices.length}</strong></div>
+            {isClient
+              ? <div className="f-list-item"><span>Pembayaran</span><strong>{paymentCount}</strong></div>
+              : <div className="f-list-item"><span>Expense</span><strong>{expenses.length}</strong></div>}
+            <div className="f-list-item"><span>Status</span><Badge tone={contact.isActive ? 'green' : 'neutral'}>{contact.isActive ? 'Aktif' : 'Diarsipkan'}</Badge></div>
+          </div>
+          <div className="f-detail-summary-actions">
+            {isClient && <Link href="/proposals" className="f-btn soft">＋ Buat Proposal</Link>}
+            {!isClient && <Link href="/expenses" className="f-btn soft">＋ Catat Expense</Link>}
+            {contact.email && <a className="f-btn" href={`mailto:${contact.email}`}>Kirim email</a>}
+          </div>
         </Card>
       </div>
 
       <Card>
-        <div className="f-card-head"><div><h3>Histori transaksi</h3><p>Aktivitas terbaru yang terkait dengan kontak ini.</p></div><span className="f-badge neutral">{history.length} aktivitas</span></div>
-        {history.length ? <div className="f-detail-timeline">{history.map(item=><div className="f-timeline-item" key={item.id}><div className="f-timeline-dot"/><div className="f-timeline-content"><div className="f-timeline-top"><span className="f-timeline-kind"><Badge tone={item.tone}>{item.kind}</Badge><strong>{item.title}</strong></span><strong>{money(item.amount)}</strong></div><div className="f-timeline-bottom"><span>{dateId(item.date)} · {item.detail}</span><a href={item.href} className="f-btn soft">Lihat</a></div></div></div>)}</div> : <div className="f-empty"><strong>Belum ada aktivitas</strong>Transaksi terkait kontak ini akan tampil di sini.</div>}
+        <div className="f-card-head">
+          <div>
+            <h3>Histori transaksi</h3>
+            <p>Aktivitas terbaru yang terkait dengan kontak ini.</p>
+          </div>
+          <span className="f-badge neutral">{history.length} aktivitas</span>
+        </div>
+        {history.length
+          ? <div className="f-detail-timeline">
+              {history.map(item => (
+                <div className="f-timeline-item" key={item.id}>
+                  <div className="f-timeline-dot"/>
+                  <div className="f-timeline-content">
+                    <div className="f-timeline-top">
+                      <span className="f-timeline-kind"><Badge tone={item.tone}>{item.kind}</Badge><strong>{item.title}</strong></span>
+                      <strong>{money(item.amount)}</strong>
+                    </div>
+                    <div className="f-timeline-bottom">
+                      <span>{dateId(item.date)} · {item.detail}</span>
+                      <a href={item.href} className="f-btn soft">Lihat</a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          : <div className="f-empty"><strong>Belum ada aktivitas</strong>Transaksi terkait kontak ini akan tampil di sini.</div>}
       </Card>
 
-      <div className="f-detail-main-grid detail-secondary">
-        <Card>
-          <div className="f-card-head"><div><h3>{isClient?'Invoice & pembayaran':'Expense vendor'}</h3><p>{isClient?'Ringkasan tagihan dan saldo per invoice.':'Status biaya yang menggunakan vendor ini.'}</p></div></div>
-          {isClient ? invoices.length ? <div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>Invoice</th><th>Status</th><th>Total</th><th>Dibayar</th><th>Sisa</th><th></th></tr></thead><tbody>{invoices.map(invoice=><tr key={invoice.id}><td><strong>{invoice.invoiceNumber}</strong><div className="f-muted" style={{fontSize:10}}>Jatuh tempo {dateId(invoice.dueDate)}</div></td><td><Badge tone={statusTone(invoice.status)}>{invoice.status}</Badge></td><td>{money(invoice.totalAmount)}</td><td>{money(invoice.paidAmount)}</td><td>{money(invoice.outstandingAmount)}</td><td><a className="f-btn" href={`/documents/invoices/${invoice.id}`} target="_blank" rel="noreferrer">PDF</a></td></tr>)}</tbody></table></div> : <div className="f-empty"><strong>Belum ada invoice</strong>Invoice yang terkait dengan klien ini akan tampil di sini.</div> : expenses.length ? <div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>Tanggal</th><th>Kategori</th><th>Status</th><th>Nilai</th><th>Aksi</th></tr></thead><tbody>{expenses.map(expense=><tr key={expense.id}><td>{dateId(expense.expenseDate)}</td><td>{expense.category}</td><td><Badge tone={statusTone(expense.status)}>{expense.status}</Badge></td><td className="f-number">{money(expense.amount)}</td><td><a className="f-btn soft" href={`/expenses?focus=${expense.id}`}>Lihat detail</a></td></tr>)}</tbody></table></div> : <div className="f-empty"><strong>Belum ada expense</strong>Expense yang memakai vendor ini akan tampil di sini.</div>}
-        </Card>
-      </div>
+      <Card className="f-detail-transaction-card">
+        <div className="f-card-head">
+          <div>
+            <h3>{isClient ? 'Invoice & pembayaran' : 'Expense vendor'}</h3>
+            <p>{isClient ? 'Ringkasan tagihan dan saldo per invoice.' : 'Status biaya yang menggunakan vendor ini.'}</p>
+          </div>
+          <span className="f-badge neutral">{isClient ? `${invoices.length} invoice` : `${expenses.length} expense`}</span>
+        </div>
+        {isClient
+          ? invoices.length
+            ? <div className="f-client-detail-table-wrap">
+                <table className="f-table">
+                  <thead><tr><th>Invoice</th><th>Status</th><th>Total</th><th>Dibayar</th><th>Sisa</th><th /></tr></thead>
+                  <tbody>
+                    {invoices.map(invoice => (
+                      <tr key={invoice.id}>
+                        <td><strong>{invoice.invoiceNumber}</strong><div className="f-muted" style={{fontSize:10}}>Jatuh tempo {dateId(invoice.dueDate)}</div></td>
+                        <td><Badge tone={statusTone(invoice.status)}>{invoice.status}</Badge></td>
+                        <td className="f-number">{money(invoice.totalAmount)}</td>
+                        <td className="f-number">{money(invoice.paidAmount)}</td>
+                        <td className="f-number">{money(invoice.outstandingAmount)}</td>
+                        <td><a className="f-btn" href={`/documents/invoices/${invoice.id}`} target="_blank" rel="noreferrer">PDF</a></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            : <div className="f-empty"><strong>Belum ada invoice</strong>Invoice yang terkait dengan klien ini akan tampil di sini.</div>
+          : expenses.length
+            ? <div className="f-client-detail-table-wrap">
+                <table className="f-table">
+                  <thead><tr><th>Tanggal</th><th>Kategori</th><th>Status</th><th>Nilai</th><th>Aksi</th></tr></thead>
+                  <tbody>
+                    {expenses.map(expense => (
+                      <tr key={expense.id}>
+                        <td>{dateId(expense.expenseDate)}</td>
+                        <td>{expense.category}</td>
+                        <td><Badge tone={statusTone(expense.status)}>{expense.status}</Badge></td>
+                        <td className="f-number">{money(expense.amount)}</td>
+                        <td><a className="f-btn soft" href={`/expenses?focus=${expense.id}`}>Lihat detail</a></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            : <div className="f-empty"><strong>Belum ada expense</strong>Expense yang memakai vendor ini akan tampil di sini.</div>}
+      </Card>
     </div>
   </FinoraShell>
 }
