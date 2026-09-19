@@ -1764,3 +1764,124 @@ body{
 @media(max-width:1100px){.f-top-context{min-width:130px}.f-client-filter-row{grid-template-columns:minmax(220px,1fr) 150px 170px auto}}
 @media(max-width:780px){.f-top{height:58px!important;min-height:58px!important;padding:0 12px!important}.f-top-context{display:none}.f-top-account-label,.f-date{display:none}.f-search-wrap{width:auto!important;flex:1!important}.f-client-hero{flex-direction:column;align-items:flex-start}.f-client-hero-copy h1{font-size:25px!important}.f-client-stats{grid-template-columns:1fr 1fr}.f-client-stats .f-client-stat:last-child{grid-column:1/-1}.f-client-filter-row{grid-template-columns:1fr 1fr}.f-client-search{grid-column:1/-1}.f-client-form-grid{grid-template-columns:1fr}.f-client-field.full{grid-column:auto}}
 @media(max-width:520px){.f-client-stats{grid-template-columns:1fr}.f-client-stats .f-client-stat:last-child{grid-column:auto}.f-client-filter-row{grid-template-columns:1fr}.f-client-search{grid-column:auto}.f-client-hero-copy h1{font-size:23px!important}}
+
+
+/* ================================================================
+   Client drawer polish — no header overlap, lighter focus layer,
+   calmer form hierarchy, persistent actions
+   ================================================================ */
+.f-client-drawer{
+  inset:68px 0 0!important;
+  z-index:120!important;
+  background:rgba(10,31,27,.15)!important;
+  backdrop-filter:blur(1px)!important;
+}
+.f-client-drawer-panel{
+  width:min(500px,100vw)!important;
+  height:100%!important;
+  overflow-y:auto!important;
+  background:#f7faf8!important;
+  border-left:1px solid #cbd7d2!important;
+  box-shadow:-20px 0 56px rgba(13,42,35,.12)!important;
+}
+.f-client-drawer-head{
+  position:sticky!important;
+  top:0!important;
+  z-index:3!important;
+  padding:18px 20px!important;
+  background:rgba(247,250,248,.98)!important;
+  border-bottom:1px solid #d8e2dd!important;
+  box-shadow:0 1px 0 rgba(255,255,255,.7)!important;
+}
+.f-client-drawer-head h3{
+  margin:0!important;
+  color:#17312c!important;
+  font-size:17px!important;
+  line-height:1.2!important;
+  font-weight:750!important;
+  letter-spacing:-.02em!important;
+}
+.f-client-drawer-head p{
+  margin:5px 0 0!important;
+  max-width:390px!important;
+  color:#7b8984!important;
+  font-size:10px!important;
+  line-height:1.5!important;
+  font-weight:450!important;
+}
+.f-client-drawer-close{
+  flex:0 0 auto!important;
+  width:32px!important;
+  height:32px!important;
+  border:1px solid #cbd7d2!important;
+  border-radius:8px!important;
+  background:#f7faf8!important;
+  color:#50635d!important;
+  cursor:pointer!important;
+  font-size:20px!important;
+  line-height:1!important;
+}
+.f-client-drawer-close:hover{
+  background:#eaf1ed!important;
+  border-color:#a8c2b9!important;
+  color:#0a6258!important;
+}
+.f-client-form{
+  gap:14px!important;
+  padding:18px 20px 92px!important;
+}
+.f-client-form-grid{gap:12px!important}
+.f-client-field{
+  gap:6px!important;
+  color:#43544e!important;
+  font-size:10px!important;
+  font-weight:650!important;
+}
+.f-client-field input,
+.f-client-field select,
+.f-client-field textarea{
+  border-color:#c8d5cf!important;
+  background:#fdfefd!important;
+  color:#223630!important;
+  font-size:11px!important;
+  font-weight:450!important;
+}
+.f-client-field input::placeholder,
+.f-client-field textarea::placeholder{
+  color:#8d9994!important;
+  font-weight:450!important;
+}
+.f-client-field select{font-weight:550!important}
+.f-client-field small{
+  color:#87938e!important;
+  font-size:9px!important;
+  font-weight:450!important;
+  line-height:1.4!important;
+}
+.f-client-form-actions{
+  position:sticky!important;
+  bottom:-1px!important;
+  z-index:4!important;
+  display:flex!important;
+  justify-content:flex-end!important;
+  gap:8px!important;
+  margin:4px -20px -18px!important;
+  padding:13px 20px!important;
+  background:rgba(247,250,248,.97)!important;
+  border-top:1px solid #d8e2dd!important;
+  box-shadow:0 -8px 18px rgba(21,52,44,.045)!important;
+  backdrop-filter:blur(10px)!important;
+}
+.f-client-form-actions .f-btn{
+  min-height:35px!important;
+  padding:8px 12px!important;
+  font-size:10px!important;
+}
+
+@media(max-width:780px){
+  .f-client-drawer{inset:58px 0 0!important}
+  .f-client-drawer-panel{width:min(500px,100vw)!important}
+  .f-client-drawer-head{padding:16px!important}
+  .f-client-form{padding:16px 16px 88px!important}
+  .f-client-form-actions{margin:4px -16px -16px!important;padding:12px 16px!important}
+}
