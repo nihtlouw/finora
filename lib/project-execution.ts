@@ -1,5 +1,3 @@
-import { prisma } from '@/lib/db/prisma'
-
 export const DEFAULT_EXECUTION_MILESTONES = [
   ['MOBILIZATION', 'Mobilisasi'],
   ['PROCUREMENT', 'Procurement'],
@@ -66,6 +64,7 @@ export async function snapshotProposalBOQ(tx: any, projectId: string, proposalId
 }
 
 export async function getBillingReadiness(projectId: string, billingMilestoneId: string) {
+  const { prisma } = await import('./db/prisma.ts')
   const conditions = await prisma.billingMilestoneCondition.findMany({
     where: { billingMilestoneId },
     include: { executionMilestone: true },
