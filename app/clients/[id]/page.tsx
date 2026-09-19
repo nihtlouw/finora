@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import FinoraShell from '@/components/finora-shell'
 import { Badge, Card, PageHeader, money } from '@/components/finora-ui'
-import { getCurrentFinoraContext } from '@/lib/auth/current-user'
+import { canManageClients, getCurrentFinoraContext } from '@/lib/auth/current-user'
 import { prisma } from '@/lib/db/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -61,11 +61,11 @@ export default async function ClientVendorDetailPage({ params }: PageProps) {
   return <FinoraShell workspaceName={context.workspace.name} role={context.user.role} title={isClient ? 'Detail Klien' : 'Detail Vendor'}>
     <div className="f-content f-detail-page">
       <div className="f-breadcrumb no-print"><Link href="/clients">Klien & Vendor</Link><span>›</span><strong>{contact.name}</strong></div>
-      <PageHeader eyebrow="Master Data / Detail" title={contact.name} description={isClient ? 'Ringkasan hubungan bisnis, invoice, pembayaran, dan histori aktivitas klien.' : 'Ringkasan vendor, expense, approval, dan histori aktivitas operasional.'} action={<div className="f-actions"><Badge tone={contact.isActive?'green':'neutral'}>{contact.isActive?'Aktif':'Diarsipkan'}</Badge><Link href="/clients" className="f-btn">← Kembali</Link></div>} />
+      <PageHeader eyebrow="Master Data / Detail" title={contact.name} description={isClient ? 'Ringkasan hubungan bisnis, invoice, pembayaran, dan histori aktivitas klien.' : 'Ringkasan vendor, expense, approval, dan histori aktivitas operasional.'} action={<div className="f-actions"><Badge tone={contact.isActive?'green':'neutral'}>{contact.isActive?'Aktif':'Diarsipkan'}</Badge>{canManageClients(context.user.role)&&<Link href={`/clients?edit=${contact.id}`} className="f-btn primary">Edit Kontak</Link>}<Link href="/clients" className="f-btn">← Kembali</Link></div>} />
 
       <section className="f-detail-hero">
         <div className="f-detail-identity"><div className={`f-contact-avatar ${isClient?'client':'vendor'}`}>{contact.name.slice(0,1).toUpperCase()}</div><div><div className="f-eyebrow">{isClient?'Klien':'Vendor'}</div><h2>{contact.name}</h2><p>{contact.picName ? `PIC: ${contact.picName}` : 'PIC belum diisi'}{contact.email ? ` · ${contact.email}` : ''}</p></div></div>
-        <div className="f-detail-actions">{isClient&&<a className="f-btn primary" href="/proposals">＋ Buat Proposal</a>}{!isClient&&<a className="f-btn primary" href="/expenses">＋ Catat Expense</a>}<a className="f-btn" href={`mailto:${contact.email||''}`}>Kirim email</a></div>
+        <div className="f-detail-actions">{isClient&&<a className="f-btn primary" href="/proposals">＋ Buat Proposal</a>}{!isClient&&<a className="f-btn primary" href="/expenses">＋ Catat Expense</a>}{contact.email&&<a className="f-btn" href={`mailto:${contact.email}`}>Kirim email</a>}</div>
       </section>
 
       <div className="f-grid-4 f-detail-kpis">
