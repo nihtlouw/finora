@@ -70,9 +70,22 @@ function offeringPlaceholder(type: string) {
     : 'Contoh: gedung, konstruksi, manufaktur, IoT, pengadaan IT'
 }
 
-function excerpt(value: string | null, max = 74) {
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || '—'
+}
+
+function excerpt(value: string | null, max = 62) {
   if (!value) return '—'
   return value.length > max ? `${value.slice(0, max)}…` : value
+}
+
+function contactLine(x: Client) {
+  return x.email || x.phone || 'Kontak belum diisi'
 }
 
 export default function ClientVendorManager({ initialClients, workspace, role }: Props) {
@@ -81,24 +94,33 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
   const [type, setType] = useState('ALL')
   const [category, setCategory] = useState('ALL')
   const [archived, setArchived] = useState(false)
-  const [form, setForm] = useState<any>(empty)
+  const [form, setForm] = useState<any>({ ...empty })
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
 
   const availableCategories = useMemo(() => {
-    const source = type === 'VENDOR' ? VENDOR_CATEGORIES : type === 'CLIENT' ? CLIENT_CATEGORIES : [...CLIENT_CATEGORIES, ...VENDOR_CATEGORIES]
+    const source = type === 'VENDOR'
+      ? VENDOR_CATEGORIES
+      : type === 'CLIENT'
+        ? CLIENT_CATEGORIES
+        : [...CLIENT_CATEGORIES, ...VENDOR_CATEGORIES]
+
     return Array.from(new Set(source))
   }, [type])
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
+
     return rows.filter((x) => {
       const haystack = `${x.name} ${x.category || ''} ${x.offerings || ''} ${x.email || ''} ${x.picName || ''} ${x.phone || ''}`.toLowerCase()
-      return (type === 'ALL' || x.type === type) &&
+
+      return (
+        (type === 'ALL' || x.type === type) &&
         (category === 'ALL' || x.category === category) &&
         (archived || x.isActive) &&
         (!needle || haystack.includes(needle))
+      )
     })
   }, [rows, q, type, category, archived])
 
@@ -112,16 +134,29 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
     setForm((current: any) => ({ ...current, type: nextType, category: '' }))
   }
 
-  function edit(x?: Client) {
-    setForm(x ? { ...x } : { ...empty })
+  function openNew() {
+    setForm({ ...empty })
     setOpen(true)
     setNotice('')
   }
 
-  async function save(e: any) {
+  function edit(x: Client) {
+    setForm({ ...x })
+    setOpen(true)
+    setNotice('')
+  }
+
+  function selectTab(nextType: string, showArchived = false) {
+    setType(nextType)
+    setArchived(showArchived)
+    setCategory('ALL')
+  }
+
+  async function save(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSaving(true)
     setNotice('')
+
     try {
       const editing = Boolean(form.id)
       const response = await fetch(editing ? `/api/clients/${form.id}` : '/api/clients', {
@@ -130,10 +165,14 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
         body: JSON.stringify(form),
       })
       const data = await response.json()
+
       if (!response.ok) throw new Error(data.error)
-      setRows((current) => editing
-        ? current.map((x) => x.id === data.client.id ? data.client : x)
-        : [...current, data.client].sort((a, b) => a.name.localeCompare(b.name)))
+
+      setRows((current) =>
+        editing
+          ? current.map((x) => x.id === data.client.id ? data.client : x)
+          : [...current, data.client].sort((a, b) => a.name.localeCompare(b.name)),
+      )
       setOpen(false)
       setNotice(editing ? 'Kontak diperbarui.' : 'Kontak ditambahkan.')
     } catch (error) {
@@ -146,10 +185,16 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
   async function archive(x: Client) {
     if (!canDelete(role)) return
     if (!confirm(`${x.name} akan dinonaktifkan. Lanjutkan?`)) return
+
     const response = await fetch(`/api/clients/${x.id}`, { method: 'DELETE' })
     const data = await response.json()
+
     if (response.ok) {
-      setRows((current) => data.action === 'deleted' ? current.filter((z: Client) => z.id !== x.id) : current.map((z: Client) => z.id === x.id ? data.client : z))
+      setRows((current) =>
+        data.action === 'deleted'
+          ? current.filter((z: Client) => z.id !== x.id)
+          : current.map((z: Client) => z.id === x.id ? data.client : z),
+      )
       setNotice(data.action === 'deleted' ? 'Kontak dihapus.' : 'Kontak diarsipkan.')
     } else {
       setNotice(data.error || 'Gagal.')
@@ -157,195 +202,277 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
   }
 
   return (
-    <div className="f-content">
-      <div className="f-pagehead">
-        <div>
+    <div className="f-content f-client-page">
+      <div className="f-client-hero">
+        <div className="f-client-hero-copy">
           <div className="f-eyebrow">Master Data</div>
           <h1>Klien & Vendor</h1>
-          <p>Cari kontak berdasarkan nama perusahaan, bahan/jasa yang disediakan, bidang, PIC, atau informasi kontak.</p>
+          <p>
+            Satu direktori untuk relasi bisnis yang dipakai lintas proposal, PO, project,
+            invoice, biaya, dan histori pembayaran.
+          </p>
         </div>
-        <button className="f-btn primary" onClick={() => {
-          if (!canManage(role)) {
-            setNotice('Role Viewer tidak memiliki izin menambah atau mengubah Klien/Vendor. Masuk sebagai Owner, Finance, atau Sales.')
-            return
-          }
-          edit()
-        }}>＋ Tambah Kontak</button>
+        <button
+          className="f-btn primary"
+          onClick={() => {
+            if (!canManage(role)) {
+              setNotice('Role Viewer tidak memiliki izin menambah atau mengubah Klien/Vendor. Masuk sebagai Owner, Finance, atau Sales.')
+              return
+            }
+            openNew()
+          }}
+        >
+          ＋ Tambah Kontak
+        </button>
       </div>
 
-      <div className="f-grid-3" style={{ marginBottom: 16 }}>
-        <Stat label="Klien Aktif" value={stats.clients} icon="♙" />
-        <Stat label="Vendor Aktif" value={stats.vendors} icon="▣" />
-        <Stat label="Diarsipkan" value={stats.inactive} icon="□" />
+      <div className="f-client-stats">
+        <div className="f-client-stat">
+          <div className="f-client-stat-icon">K</div>
+          <div className="f-client-stat-copy">
+            <span>Klien aktif</span>
+            <strong>{stats.clients}</strong>
+            <small>Relasi customer dalam workspace</small>
+          </div>
+        </div>
+        <div className="f-client-stat">
+          <div className="f-client-stat-icon">V</div>
+          <div className="f-client-stat-copy">
+            <span>Vendor aktif</span>
+            <strong>{stats.vendors}</strong>
+            <small>Supplier / penyedia jasa aktif</small>
+          </div>
+        </div>
+        <div className="f-client-stat">
+          <div className="f-client-stat-icon">A</div>
+          <div className="f-client-stat-copy">
+            <span>Diarsipkan</span>
+            <strong>{stats.inactive}</strong>
+            <small>Masih tersimpan untuk histori</small>
+          </div>
+        </div>
       </div>
 
-      <div className="f-panel-grid">
-        <section className="f-card">
-          <div className="f-card-head">
-            <div>
-              <h3>Master kontak</h3>
-              <p>{filtered.length} kontak ditampilkan. Pencarian juga membaca kategori dan produk/jasa.</p>
-            </div>
-            <div className="f-badge neutral">Workspace: {workspace.name}</div>
+      <section className="f-client-card">
+        <div className="f-client-toolbar">
+          <div className="f-client-tabs" role="tablist" aria-label="Filter tipe kontak">
+            <button className={type === 'ALL' && !archived ? 'f-client-tab active' : 'f-client-tab'} type="button" onClick={() => selectTab('ALL')}>Semua <span>({rows.length - stats.inactive})</span></button>
+            <button className={type === 'CLIENT' && !archived ? 'f-client-tab active' : 'f-client-tab'} type="button" onClick={() => selectTab('CLIENT')}>Klien <span>({stats.clients})</span></button>
+            <button className={type === 'VENDOR' && !archived ? 'f-client-tab active' : 'f-client-tab'} type="button" onClick={() => selectTab('VENDOR')}>Vendor <span>({stats.vendors})</span></button>
+            <button className={archived ? 'f-client-tab active' : 'f-client-tab'} type="button" onClick={() => selectTab('ALL', true)}>Diarsipkan <span>({stats.inactive})</span></button>
           </div>
 
-          <div className="f-toolbar" style={{ alignItems: 'stretch', flexWrap: 'wrap' }}>
-            <input
-              className="f-input"
-              style={{ minWidth: 260, flex: '1 1 300px' }}
-              placeholder="Cari perusahaan, bahan, jasa, PIC..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <select className="f-select" value={type} onChange={(e) => { setType(e.target.value); setCategory('ALL') }}>
+          <div className="f-client-filter-row">
+            <div className="f-client-search">
+              <span className="f-client-search-icon" aria-hidden="true">⌕</span>
+              <input
+                placeholder="Cari perusahaan, PIC, produk / jasa..."
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                aria-label="Cari klien atau vendor"
+              />
+            </div>
+            <select
+              className="f-client-select"
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value)
+                setArchived(false)
+                setCategory('ALL')
+              }}
+              aria-label="Filter tipe"
+            >
               <option value="ALL">Semua tipe</option>
               <option value="CLIENT">Klien</option>
               <option value="VENDOR">Vendor</option>
             </select>
-            <select className="f-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <select
+              className="f-client-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              aria-label="Filter kategori"
+            >
               <option value="ALL">Semua kategori</option>
               {availableCategories.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
-            <label className="f-badge neutral" style={{ gap: 6, alignSelf: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Arsip
+            <label className="f-client-archive-toggle">
+              <input
+                type="checkbox"
+                checked={archived}
+                onChange={(e) => setArchived(e.target.checked)}
+              />
+              Tampilkan arsip
             </label>
           </div>
+        </div>
 
-          {notice && <div style={{ padding: '0 16px 12px' }}><span className="f-badge green">{notice}</span></div>}
+        {notice && <div className="f-client-notice">{notice}</div>}
 
-          <div style={{ overflowX: 'auto' }}>
-            <table className="f-table">
-              <thead>
-                <tr>
-                  <th>Nama / Perusahaan</th>
-                  <th>Tipe</th>
-                  <th>Kategori</th>
-                  <th>Produk / Jasa</th>
-                  <th>Kontak</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((x) => (
-                  <tr key={x.id}>
-                    <td>
-                      <strong>{x.name}</strong>
-                      <div className="f-muted" style={{ fontSize: 10 }}>{x.picName || 'PIC belum diisi'}</div>
-                    </td>
-                    <td><span className={`f-badge ${x.type === 'CLIENT' ? 'blue' : 'amber'}`}>{x.type === 'CLIENT' ? 'Klien' : 'Vendor'}</span></td>
-                    <td>{x.category || <span className="f-muted">Belum dikategorikan</span>}</td>
-                    <td style={{ maxWidth: 250 }}>{excerpt(x.offerings)}</td>
-                    <td><div>{x.email || '—'}</div><div className="f-muted" style={{ fontSize: 10 }}>{x.phone || '—'}</div></td>
-                    <td><span className={`f-badge ${x.isActive ? 'green' : 'neutral'}`}>{x.isActive ? 'Aktif' : 'Diarsipkan'}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <Link href={`/clients/${x.id}`} className="f-btn soft">Detail</Link>
-                        {canManage(role) && <button className="f-btn" onClick={() => edit(x)}>Edit</button>}
-                        {canDelete(role) && x.isActive && <button className="f-btn" onClick={() => archive(x)}>Arsip</button>}
+        <div className="f-client-table-wrap">
+          <table className="f-client-table">
+            <thead>
+              <tr>
+                <th>Perusahaan / PIC</th>
+                <th>Tipe</th>
+                <th>Kategori</th>
+                <th>Produk / Jasa</th>
+                <th>Kontak</th>
+                <th>Status</th>
+                <th aria-label="Aksi" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((x) => (
+                <tr key={x.id}>
+                  <td>
+                    <div className="f-client-identity">
+                      <div className="f-client-avatar">{initials(x.name)}</div>
+                      <div>
+                        <strong>{x.name}</strong>
+                        <small>{x.picName || 'PIC belum diisi'}</small>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`f-client-type ${x.type === 'CLIENT' ? 'client' : 'vendor'}`}>
+                      {x.type === 'CLIENT' ? 'Klien' : 'Vendor'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={x.category ? 'f-client-category' : 'f-client-category muted'}>
+                      {x.category || 'Belum dikategorikan'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="f-client-offering">{excerpt(x.offerings)}</div>
+                  </td>
+                  <td>
+                    <div className="f-client-contact">
+                      <strong>{x.picName || 'PIC belum diisi'}</strong>
+                      <small>{contactLine(x)}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`f-client-status ${x.isActive ? 'active' : 'inactive'}`}>
+                      <span aria-hidden="true">●</span>
+                      {x.isActive ? 'Aktif' : 'Diarsipkan'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="f-client-actions">
+                      <Link href={`/clients/${x.id}`} className="f-client-detail">Detail</Link>
+                      {(canManage(role) || canDelete(role)) && (
+                        <details className="f-client-more">
+                          <summary aria-label={`Aksi ${x.name}`}>⋯</summary>
+                          <div className="f-client-more-menu">
+                            {canManage(role) && (
+                              <button type="button" onClick={() => edit(x)}>Edit</button>
+                            )}
+                            {canDelete(role) && x.isActive && (
+                              <button type="button" onClick={() => archive(x)}>Arsipkan</button>
+                            )}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!filtered.length && (
+          <div className="f-client-empty">
+            <strong>Tidak ada kontak yang cocok</strong>
+            Coba cari dengan nama perusahaan, kategori, produk / jasa, atau nama PIC.
           </div>
-
-          {!filtered.length && <div className="f-empty"><strong>Tidak ada kontak yang cocok</strong>Coba cari dengan nama perusahaan, kata seperti “kabel”, “panel”, “instalasi”, kategori, atau nama PIC.</div>}
-        </section>
-
-        <section className="f-card">
-          <div className="f-card-head">
-            <div>
-              <h3>Tambah kontak</h3>
-              <p>Isi identitas minimum terlebih dahulu. Email tidak wajib agar vendor lapangan bisa segera dicatat.</p>
-            </div>
-          </div>
-
-          <form className="f-form" onSubmit={save}>
-            <label>
-              Tipe
-              <select className="f-select" value={form.type} onChange={(e) => applyType(e.target.value)}>
-                <option value="CLIENT">Klien</option>
-                <option value="VENDOR">Vendor</option>
-              </select>
-            </label>
-
-            <label>
-              Kategori *
-              <select className="f-select" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                <option value="">Pilih kategori</option>
-                {categoryOptions(form.type).map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </label>
-
-            <label>
-              Nama perusahaan *
-              <input className="f-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={form.type === 'VENDOR' ? 'PT / CV / toko / penyedia jasa' : 'PT / CV / instansi klien'} />
-            </label>
-
-            <label>
-              {offeringLabel(form.type)} *
-              <textarea className="f-textarea" required value={form.offerings} onChange={(e) => setForm({ ...form, offerings: e.target.value })} placeholder={offeringPlaceholder(form.type)} />
-              <small className="f-muted">Pisahkan beberapa item dengan koma agar mudah ditemukan saat mencari.</small>
-            </label>
-
-            <label>
-              PIC
-              <input className="f-input" value={form.picName} onChange={(e) => setForm({ ...form, picName: e.target.value })} placeholder="Nama PIC" />
-            </label>
-
-            <label>
-              Email
-              <input className="f-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="finance@perusahaan.id" />
-            </label>
-
-            <label>
-              Telepon
-              <input className="f-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+62 ..." />
-            </label>
-
-            <label>Alamat<textarea className="f-textarea" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
-            <label>NPWP<input className="f-input" value={form.npwp} onChange={(e) => setForm({ ...form, npwp: e.target.value })} /></label>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="f-btn" onClick={() => setForm({ ...empty })}>Reset</button>
-              <button className="f-btn primary" disabled={saving || !canManage(role)}>
-                {!canManage(role) ? 'Tidak punya akses' : saving ? 'Menyimpan...' : 'Simpan Kontak'}
-              </button>
-            </div>
-          </form>
-        </section>
-      </div>
+        )}
+      </section>
 
       {open && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,39,35,.38)', display: 'grid', placeItems: 'center', padding: 16 }}>
-          <div className="f-card" style={{ width: 'min(760px,100%)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="f-card-head">
-              <div><h3>{form.id ? 'Edit Kontak' : 'Tambah Kontak'}</h3><p>Master data ini dipakai untuk proposal, invoice, expense, PO, dan histori transaksi.</p></div>
-              <button className="f-btn" onClick={() => setOpen(false)}>Tutup</button>
-            </div>
-            <form className="f-form" onSubmit={save}>
-              <div className="f-form-grid">
-                <label>Nama perusahaan *<input className="f-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-                <label>Tipe<select className="f-select" value={form.type} onChange={(e) => applyType(e.target.value)}><option value="CLIENT">Klien</option><option value="VENDOR">Vendor</option></select></label>
-                <label>Kategori *<select className="f-select" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="">Pilih kategori</option>{categoryOptions(form.type).map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-                <label className="full">{offeringLabel(form.type)} *<textarea className="f-textarea" required value={form.offerings} onChange={(e) => setForm({ ...form, offerings: e.target.value })} placeholder={offeringPlaceholder(form.type)} /></label>
-                <label>PIC<input className="f-input" value={form.picName} onChange={(e) => setForm({ ...form, picName: e.target.value })} /></label>
-                <label>Email<input className="f-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
-                <label>Telepon<input className="f-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
-                <label>NPWP<input className="f-input" value={form.npwp} onChange={(e) => setForm({ ...form, npwp: e.target.value })} /></label>
-                <label className="full">Alamat<textarea className="f-textarea" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
+        <div className="f-client-drawer" role="dialog" aria-modal="true" aria-labelledby="client-drawer-title">
+          <div className="f-client-drawer-panel">
+            <div className="f-client-drawer-head">
+              <div>
+                <h3 id="client-drawer-title">{form.id ? 'Edit Kontak' : 'Tambah Kontak'}</h3>
+                <p>
+                  Data ini menjadi master untuk proposal, invoice, expense, PO, dan histori transaksi.
+                  {workspace.name ? ` Workspace: ${workspace.name}.` : ''}
+                </p>
               </div>
-              <button className="f-btn primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan perubahan'}</button>
+              <button type="button" className="f-client-drawer-close" onClick={() => setOpen(false)} aria-label="Tutup">
+                ×
+              </button>
+            </div>
+
+            <form className="f-client-form" onSubmit={save}>
+              <div className="f-client-form-grid">
+                <label className="f-client-field">
+                  Tipe
+                  <select value={form.type} onChange={(e) => applyType(e.target.value)}>
+                    <option value="CLIENT">Klien</option>
+                    <option value="VENDOR">Vendor</option>
+                  </select>
+                </label>
+
+                <label className="f-client-field">
+                  Kategori *
+                  <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+                    <option value="">Pilih kategori</option>
+                    {categoryOptions(form.type).map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+
+                <label className="f-client-field full">
+                  Nama perusahaan *
+                  <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={form.type === 'VENDOR' ? 'PT / CV / toko / penyedia jasa' : 'PT / CV / instansi klien'} />
+                </label>
+
+                <label className="f-client-field full">
+                  {offeringLabel(form.type)} *
+                  <textarea required value={form.offerings} onChange={(e) => setForm({ ...form, offerings: e.target.value })} placeholder={offeringPlaceholder(form.type)} />
+                  <small>Pisahkan beberapa item dengan koma agar mudah ditemukan saat pencarian.</small>
+                </label>
+
+                <label className="f-client-field">
+                  PIC
+                  <input value={form.picName} onChange={(e) => setForm({ ...form, picName: e.target.value })} placeholder="Nama PIC" />
+                </label>
+
+                <label className="f-client-field">
+                  Email
+                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="finance@perusahaan.id" />
+                </label>
+
+                <label className="f-client-field">
+                  Telepon
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+62 ..." />
+                </label>
+
+                <label className="f-client-field">
+                  NPWP
+                  <input value={form.npwp} onChange={(e) => setForm({ ...form, npwp: e.target.value })} />
+                </label>
+
+                <label className="f-client-field full">
+                  Alamat
+                  <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                </label>
+              </div>
+
+              <div className="f-client-form-actions">
+                <button type="button" className="f-btn" onClick={() => setForm({ ...empty })}>
+                  Reset
+                </button>
+                <button className="f-btn primary" disabled={saving || !canManage(role)}>
+                  {!canManage(role) ? 'Tidak punya akses' : saving ? 'Menyimpan...' : 'Simpan Kontak'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
     </div>
   )
-}
-
-function Stat({ label, value, icon }: { label: string; value: number; icon: string }) {
-  return <div className="f-stat"><div className="f-stat-icon">{icon}</div><div className="f-stat-body"><span>{label}</span><strong>{value}</strong><small>Data workspace aktif</small></div></div>
 }
