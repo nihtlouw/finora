@@ -96,6 +96,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
   const [category, setCategory] = useState('ALL')
   const [archived, setArchived] = useState(false)
   const [form, setForm] = useState<any>({ ...empty })
+  const [initialForm, setInitialForm] = useState<any>({ ...empty })
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState('')
@@ -146,12 +147,14 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
 
   function openNew() {
     setForm({ ...empty })
+    setInitialForm({ ...empty })
     setOpen(true)
     setNotice('')
   }
 
   function edit(x: Client) {
     setForm({ ...x })
+    setInitialForm({ ...x })
     setOpen(true)
     setNotice('')
   }
@@ -520,7 +523,7 @@ export default function ClientVendorManager({ initialClients, workspace, role }:
               </div>
 
               <div className="f-client-form-actions">
-                <button type="button" className="f-btn" onClick={() => setForm(form.id ? { ...form } : { ...empty })}>
+                <button type="button" className="f-btn" onClick={() => setForm({ ...initialForm })}>
                   Reset
                 </button>
                 <button className="f-btn primary" disabled={saving || !canManage(role)}>
