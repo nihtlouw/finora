@@ -1885,3 +1885,181 @@ body{
   .f-client-form{padding:16px 16px 88px!important}
   .f-client-form-actions{margin:4px -16px -16px!important;padding:12px 16px!important}
 }
+
+
+/* ================================================================
+   Client/Vendor final pass — clarity, stable tables, usable detail UI
+   ================================================================ */
+.f-client-page .f-card,
+.f-client-page .f-stat,
+.f-detail-page .f-card,
+.f-detail-page .f-stat{
+  transform:none!important;
+}
+.f-client-page .f-card:hover,
+.f-client-page .f-stat:hover,
+.f-detail-page .f-card:hover,
+.f-detail-page .f-stat:hover{
+  transform:none!important;
+  box-shadow:var(--f-shadow)!important;
+}
+
+/* Directory table: prevent an unnecessary nested vertical scrollbar and
+   make the primary company/contact information scan faster. */
+.f-client-table-wrap{
+  overflow-x:auto!important;
+  overflow-y:clip!important;
+  scrollbar-gutter:stable!important;
+}
+.f-client-table th:nth-child(1),.f-client-table td:nth-child(1){width:24%}
+.f-client-table th:nth-child(2),.f-client-table td:nth-child(2){width:9%}
+.f-client-table th:nth-child(3),.f-client-table td:nth-child(3){width:16%}
+.f-client-table th:nth-child(4),.f-client-table td:nth-child(4){width:20%}
+.f-client-table th:nth-child(5),.f-client-table td:nth-child(5){width:17%}
+.f-client-table th:nth-child(6),.f-client-table td:nth-child(6){width:9%}
+.f-client-table th:nth-child(7),.f-client-table td:nth-child(7){width:105px}
+.f-client-name-link{
+  display:inline-block!important;
+  color:inherit!important;
+  text-decoration:none!important;
+}
+.f-client-name-link:hover strong{
+  color:#0a6258!important;
+  text-decoration:underline!important;
+  text-underline-offset:3px!important;
+}
+.f-client-contact strong{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  max-width:170px!important;
+}
+.f-client-contact small{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  max-width:170px!important;
+}
+
+/* Detail page: align cards to their natural content height. */
+.f-detail-page .f-detail-main-grid{
+  align-items:start!important;
+}
+.f-detail-page .f-detail-hero{
+  align-items:center!important;
+  gap:18px!important;
+}
+.f-detail-page .f-detail-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:7px!important;
+  flex-wrap:wrap!important;
+}
+.f-detail-page .f-detail-profile-grid{
+  align-items:stretch!important;
+}
+.f-detail-page .f-detail-profile-grid>div{
+  min-height:54px!important;
+  padding:10px 0!important;
+  border-bottom:1px solid #edf1ee!important;
+}
+.f-detail-page .f-detail-profile-grid>div:last-child{
+  border-bottom:0!important;
+}
+.f-detail-page .f-detail-profile-grid span{
+  display:block!important;
+  margin-bottom:5px!important;
+  color:#7d8883!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  letter-spacing:.11em!important;
+  text-transform:uppercase!important;
+}
+.f-detail-page .f-detail-profile-grid strong{
+  display:block!important;
+  color:#263b35!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+  font-weight:650!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Transaction history: keep amount, metadata and actions from collapsing
+   into a single unreadable line. */
+.f-detail-page .f-detail-timeline{
+  padding:4px 0!important;
+}
+.f-detail-page .f-timeline-item{
+  display:grid!important;
+  grid-template-columns:9px minmax(0,1fr)!important;
+  gap:12px!important;
+  padding:12px 16px!important;
+  border-bottom:1px solid #e8eeeb!important;
+}
+.f-detail-page .f-timeline-item:last-child{border-bottom:0!important}
+.f-detail-page .f-timeline-dot{
+  width:7px!important;
+  height:7px!important;
+  margin-top:8px!important;
+  border-radius:50%!important;
+  background:#88a99d!important;
+  box-shadow:0 0 0 3px #eaf2ee!important;
+}
+.f-detail-page .f-timeline-content{min-width:0!important}
+.f-detail-page .f-timeline-top{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.f-detail-page .f-timeline-kind{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-width:0!important;
+}
+.f-detail-page .f-timeline-kind strong{
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  color:#223933!important;
+  font-size:11px!important;
+}
+.f-detail-page .f-timeline-top>strong{
+  white-space:nowrap!important;
+  color:#173a32!important;
+  font-size:11px!important;
+  font-variant-numeric:tabular-nums!important;
+}
+.f-detail-page .f-timeline-bottom{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin-top:5px!important;
+}
+.f-detail-page .f-timeline-bottom>span{
+  min-width:0!important;
+  color:#87928d!important;
+  font-size:9px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.f-detail-page .f-timeline-bottom .f-btn{
+  flex:0 0 auto!important;
+  min-height:28px!important;
+  padding:6px 9px!important;
+  font-size:9px!important;
+}
+
+@media(max-width:780px){
+  .f-client-table-wrap{overflow-y:hidden!important}
+  .f-detail-page .f-detail-hero{align-items:flex-start!important;flex-direction:column!important}
+  .f-detail-page .f-detail-actions{justify-content:flex-start!important}
+  .f-detail-page .f-timeline-top{grid-template-columns:1fr!important;gap:5px!important}
+  .f-detail-page .f-timeline-top>strong{justify-self:start!important}
+  .f-detail-page .f-timeline-bottom{align-items:flex-start!important;flex-direction:column!important}
+  .f-detail-page .f-timeline-bottom>span{white-space:normal!important}
+}
