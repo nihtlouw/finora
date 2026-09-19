@@ -152,6 +152,22 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const payload = validateClientVendorPayload(await request.json())
+
+    if (payload.type !== existing.type) {
+      const [proposalCount, customerPOCount, invoiceCount, projectCount, expenseCount, vendorBillCount] = await prisma.$transaction([
+        prisma.proposal.count({ where: { clientId: id } }),
+        prisma.customerPO.count({ where: { clientId: id } }),
+        prisma.invoice.count({ where: { clientId: id } }),
+        prisma.project.count({ where: { clientId: id } }),
+        prisma.expense.count({ where: { vendorId: id } }),
+        prisma.vendorBill.count({ where: { vendorId: id } }),
+      ])
+      const linked = proposalCount + customerPOCount + invoiceCount + projectCount + expenseCount + vendorBillCount
+      if (linked > 0) {
+        return NextResponse.json({ error: `Tipe kontak tidak dapat diubah dari ${existing.type} karena sudah memiliki ${linked} transaksi/relasi. Buat kontak baru dengan tipe yang benar agar histori tetap konsisten.` }, { status: 409 })
+      }
+    }
+
     const duplicate = await prisma.clientVendor.findFirst({
       where: {
         workspaceId: context.workspace.id,
