@@ -90,7 +90,7 @@ export default function FinoraShell({children,workspaceName="Workspace",role="VI
     </div>
     {notifications&&<div className="f-notification-panel"><div className="f-card-head"><div><h3>Notifikasi</h3><p>Prioritas yang perlu ditinjau.</p></div></div><Link href="/receivables" onClick={()=>setNotifications(false)} className="f-list-item"><span>Invoice overdue</span><strong>{notificationCount}</strong></Link><Link href="/expenses" onClick={()=>setNotifications(false)} className="f-list-item"><span>Biaya menunggu approval</span><strong>Lihat</strong></Link></div>}
    </div>
-  </header>{children}</main>{children}</main>
+  </header>{children}</main>
  </div>
 }
 function roleLabel(role:string){return role==="OWNER"?"Owner":role==="FINANCE"?"Finance":role==="SALES"?"Sales":"Viewer"}
