@@ -126,7 +126,7 @@ async function ensureBank(workspaceId: string, name: string, bankName: string, a
 }
 
 async function ensurePeriods(workspaceId: string) {
-  for (const period of ['2026-08', '2026-09']) {
+  for (const period of ['2026-08', '2026-09', '2026-10']) {
     await prisma.accountingPeriod.upsert({
       where: { workspaceId_period: { workspaceId, period } },
       update: { status: 'OPEN', closedAt: null, closedByUserId: null },
