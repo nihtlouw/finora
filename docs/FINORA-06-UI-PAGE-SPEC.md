@@ -34,6 +34,8 @@ Row action: open detail.
 Detail: profile, employment, salary/tax/bank, payroll history, project allocations, audit.
 
 ## Payroll page
+Access to payroll is restricted to OWNER/FINANCE because salary and deduction data is sensitive. The create action requires an OPEN accounting period and starts the run as DRAFT.
+
 
 Header: selected period + headcount + gross + deductions + net.
 Filters: period, status.
