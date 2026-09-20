@@ -69,7 +69,7 @@ List vendor, bill, project, dates, total, paid, outstanding, status.
 Detail includes approval, payment, bank and cashflow.
 
 ## Payroll
-Purpose: payroll processing and cost allocation.
+Purpose: payroll processing and cost allocation. Access: OWNER/FINANCE. The page exposes run summary, employee lines, project allocations, workflow controls and canonical cashflow reference.
 List: run number, period, headcount, gross, deductions, net, status, approval, pay date.
 Detail: summary + employee lines + project allocations + workflow + cashflow reference.
 
