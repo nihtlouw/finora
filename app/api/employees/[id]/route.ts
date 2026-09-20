@@ -24,40 +24,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll/employee data hanya dapat diakses Owner/Finance.' }, { status: 403 })
 
   const { id } = await params
-  const employee = await prisma.employee.findFirst({
-    where: { id, workspaceId: c.workspace.id },
-    include: {
-      payrollLines: {
-        orderBy: { payrollRun: { payDate: 'desc' } },
-        take: 24,
-        include: {
-          payrollRun: {
-            select: {
-              id: true,
-              runNumber: true,
-              period: true,
-              status: true,
-              payDate: true,
-              grossAmount: true,
-              deductionAmount: true,
-              netAmount: true,
-            },
+  const [employee, payrollLines] = await Promise.all([
+    prisma.employee.findFirst({
+      where: { id, workspaceId: c.workspace.id },
+    }),
+    prisma.payrollLine.findMany({
+      where: { employeeId: id, payrollRun: { workspaceId: c.workspace.id } },
+      orderBy: { payrollRun: { payDate: 'desc' } },
+      take: 24,
+      include: {
+        payrollRun: {
+          select: {
+            id: true,
+            runNumber: true,
+            period: true,
+            status: true,
+            payDate: true,
+            grossAmount: true,
+            deductionAmount: true,
+            netAmount: true,
           },
-          allocations: {
-            include: {
-              project: {
-                select: { id: true, projectCode: true, projectName: true, status: true },
-              },
+        },
+        allocations: {
+          include: {
+            project: {
+              select: { id: true, projectCode: true, projectName: true, status: true },
             },
           },
         },
       },
-    },
-  })
+    }),
+  ])
 
   if (!employee) return NextResponse.json({ error: 'Karyawan tidak ditemukan.' }, { status: 404 })
 
-  return NextResponse.json({ employee })
+  return NextResponse.json({ employee: { ...employee, payrollLines } })
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
