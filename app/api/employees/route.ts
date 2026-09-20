@@ -23,6 +23,7 @@ function normalizeEmploymentType(value: unknown) {
 export async function GET() {
   const c = await getCurrentFinoraContext()
   if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll/employee data hanya dapat diakses Owner/Finance.' }, { status: 403 })
 
   const rows = await prisma.employee.findMany({
     where: { workspaceId: c.workspace.id },
@@ -46,8 +47,12 @@ export async function GET() {
     },
   })
 
+  const mask = (value: string | null) => value ? '••••' + value.slice(-4) : null
+
   const employees = rows.map((row) => ({
     ...row,
+    taxId: mask(row.taxId),
+    bankAccount: mask(row.bankAccount),
     latestPayroll: row.payrollLines[0]?.payrollRun ?? null,
     payrollLines: undefined,
   }))
