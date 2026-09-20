@@ -113,7 +113,7 @@ September 2026:
 - BCA default + Mandiri project.
 - Bank reconciliation intentional Rp750k difference.
 - 8 budget categories.
-- Periods 2026-08 and 2026-09 open.
+- Accounting periods 2026-08, 2026-09 and 2026-10 open (October is reserved for Phase A payroll creation UAT).
 
 These figures are synthetic UAT data and should be treated as test fixtures, not production facts.
 
