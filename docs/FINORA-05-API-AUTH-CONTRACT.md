@@ -21,11 +21,13 @@ Use explicit action endpoints for state transitions:
 OWNER:
 - full workspace administrative and financial control.
 
+Current application roles are OWNER, FINANCE, SALES, VIEWER. A dedicated PROJECT role is not currently part of the application role enum.
+
 FINANCE:
 - financial masters and finance transactions according to endpoint policy.
 
-PROJECT:
-- project operational data and execution workflows as allowed.
+SALES:
+- commercial/sales workflows as allowed by endpoint policy.
 
 VIEWER:
 - read-only access only.
