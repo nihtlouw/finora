@@ -120,8 +120,8 @@ async function main() {
   const budgetCategories = ['PAYROLL','VENDOR_BILL','MATERIAL','TRANSPORT','JASA_SUBKON','OPERASIONAL_UMUM','LOGISTIK','SEWA_PERALATAN']
   assert(budgetCategories.every(category => budgets.some(x => x.category === category)), 'Budget September belum lengkap untuk semua kategori UAT.')
 
-  const periods = await prisma.accountingPeriod.findMany({ where: { workspaceId: workspace.id, period: { in: ['2026-08','2026-09'] } } })
-  assert(periods.length === 2 && periods.every(x => x.status === 'OPEN'), 'Accounting period Agustus/September harus OPEN.')
+  const periods = await prisma.accountingPeriod.findMany({ where: { workspaceId: workspace.id, period: { in: ['2026-08','2026-09','2026-10'] } } })
+  assert(periods.length === 3 && periods.every(x => x.status === 'OPEN'), 'Accounting period Agustus/September/Oktober harus OPEN.')
 
   if (bca) {
     const statements = await prisma.bankStatementTransaction.findMany({ where: { workspaceId: workspace.id, bankAccountId: bca.id, externalId: { startsWith: 'UAT-BCA-SEP-2026-' } } })
@@ -177,7 +177,7 @@ async function main() {
   console.log('Vendor Bills: 1 PAID 125m + 1 APPROVED UNPAID 40m')
   console.log('Banks: BCA default + Mandiri project')
   console.log('Budgets: 8 September categories')
-  console.log('Accounting periods: 2026-08 and 2026-09 OPEN')
+  console.log('Accounting periods: 2026-08, 2026-09 and 2026-10 OPEN')
   console.log('Bank reconciliation: DRAFT with intentional 750k unmatched bank item')
 }
 
