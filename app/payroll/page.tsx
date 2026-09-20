@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function PayrollPage() {
   const c = await getCurrentFinoraContext()
   if (!c) redirect('/sign-in')
+  if (!['OWNER', 'FINANCE'].includes(c.user.role)) redirect('/dashboard')
 
   return (
     <FinoraShell workspaceName={c.workspace.name} role={c.user.role} title="payroll">
