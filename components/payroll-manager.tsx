@@ -17,7 +17,7 @@ type Employee = {
 type Allocation = {
   percentage: number | string
   amount: number | string
-  project: { projectCode: string; projectName: string; status: string }
+  project: { id: string; projectCode: string; projectName: string; status: string }
 }
 
 type PayrollLine = {
