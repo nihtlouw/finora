@@ -27,6 +27,7 @@ function allocationAmountFromCents(grossCents: bigint, percentage: number) {
 export async function GET() {
   const c = await getCurrentFinoraContext()
   if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll data hanya dapat diakses Owner/Finance.' }, { status: 403 })
 
   const rows = await prisma.payrollRun.findMany({
     where: { workspaceId: c.workspace.id },
