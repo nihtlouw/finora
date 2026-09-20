@@ -4,4 +4,97 @@ import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-us
 import { dateOnly } from '@/lib/validation/finance'
 import { writeAuditLog } from '@/lib/audit'
 import { assertAccountingPeriodOpen } from '@/lib/finance-period'
-export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){const c=await getCurrentFinoraContext();if(!c)return NextResponse.json({error:'Unauthenticated'},{status:401});if(!canManageFinance(c.user.role))return NextResponse.json({error:'Tidak memiliki akses.'},{status:403});try{const {id}=await params;const b=await req.json();const action=String(b.action||'').toUpperCase();const row=await prisma.payrollRun.findFirst({where:{id,workspaceId:c.workspace.id}});if(!row)return NextResponse.json({error:'Payroll run tidak ditemukan.'},{status:404});if(action==='APPROVE'){if(row.status!=='DRAFT')return NextResponse.json({error:'Payroll harus DRAFT.'},{status:409});const u=await prisma.payrollRun.update({where:{id},data:{status:'APPROVED',approvedAt:new Date(),approvedByUserId:c.user.id}});await writeAuditLog({workspaceId:c.workspace.id,actorUserId:c.user.id,action,entityType:'PAYROLL_RUN',entityId:id});return NextResponse.json({payrollRun:u})}if(action==='PAY'){if(row.status!=='APPROVED')return NextResponse.json({error:'Payroll harus APPROVED.'},{status:409});const payDate=b.payDate?dateOnly(b.payDate,'Tanggal pembayaran'):row.payDate;await assertAccountingPeriodOpen(c.workspace.id,payDate);const u=await prisma.$transaction(async tx=>{const p=await tx.payrollRun.update({where:{id},data:{status:'PAID',payDate,paidAt:new Date(),paidByUserId:c.user.id}});await tx.cashflowTransaction.create({data:{workspaceId:c.workspace.id,type:'EXPENSE',category:'PAYROLL',amount:row.netAmount,transactionDate:payDate,sourceRef:`PAYROLL:${id}`,payrollRunId:id}});return p});await writeAuditLog({workspaceId:c.workspace.id,actorUserId:c.user.id,action,entityType:'PAYROLL_RUN',entityId:id});return NextResponse.json({payrollRun:u})}if(action==='CANCEL'){if(!['DRAFT','APPROVED'].includes(row.status))return NextResponse.json({error:'Payroll tidak dapat dibatalkan pada status ini.'},{status:409});const u=await prisma.payrollRun.update({where:{id},data:{status:'CANCELLED'}});await writeAuditLog({workspaceId:c.workspace.id,actorUserId:c.user.id,action,entityType:'PAYROLL_RUN',entityId:id});return NextResponse.json({payrollRun:u})}return NextResponse.json({error:'Action tidak didukung.'},{status:400})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Gagal memproses payroll.'},{status:400})}}
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const c = await getCurrentFinoraContext()
+  if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll data hanya dapat diakses Owner/Finance.' }, { status: 403 })
+
+  const { id } = await params
+  const row = await prisma.payrollRun.findFirst({
+    where: { id, workspaceId: c.workspace.id },
+    include: {
+      lines: {
+        include: {
+          employee: true,
+          allocations: {
+            include: {
+              project: { select: { id: true, projectCode: true, projectName: true, status: true } },
+            },
+          },
+        },
+      },
+      cashflow: true,
+      approvedBy: { select: { name: true, email: true } },
+      paidBy: { select: { name: true, email: true } },
+    },
+  })
+
+  if (!row) return NextResponse.json({ error: 'Payroll run tidak ditemukan.' }, { status: 404 })
+  return NextResponse.json({ payrollRun: row })
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const c = await getCurrentFinoraContext()
+  if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Tidak memiliki akses.' }, { status: 403 })
+
+  try {
+    const { id } = await params
+    const b = await req.json()
+    const action = String(b.action || '').toUpperCase()
+    const row = await prisma.payrollRun.findFirst({ where: { id, workspaceId: c.workspace.id } })
+    if (!row) return NextResponse.json({ error: 'Payroll run tidak ditemukan.' }, { status: 404 })
+
+    if (action === 'APPROVE') {
+      if (row.status !== 'DRAFT') return NextResponse.json({ error: 'Payroll harus DRAFT.' }, { status: 409 })
+      const u = await prisma.payrollRun.update({ where: { id }, data: { status: 'APPROVED', approvedAt: new Date(), approvedByUserId: c.user.id } })
+      await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action, entityType: 'PAYROLL_RUN', entityId: id })
+      return NextResponse.json({ payrollRun: u })
+    }
+
+    if (action === 'PAY') {
+      if (row.status !== 'APPROVED') return NextResponse.json({ error: 'Payroll harus APPROVED.' }, { status: 409 })
+      const payDate = b.payDate ? dateOnly(b.payDate, 'Tanggal pembayaran') : row.payDate
+      await assertAccountingPeriodOpen(c.workspace.id, payDate)
+
+      const u = await prisma.$transaction(async (tx) => {
+        const existingCashflow = await tx.cashflowTransaction.findUnique({ where: { payrollRunId: id } })
+        if (existingCashflow) throw new Error('Payroll ini sudah memiliki cashflow. Pembayaran ganda ditolak.')
+
+        const p = await tx.payrollRun.update({
+          where: { id },
+          data: { status: 'PAID', payDate, paidAt: new Date(), paidByUserId: c.user.id },
+        })
+
+        await tx.cashflowTransaction.create({
+          data: {
+            workspaceId: c.workspace.id,
+            type: 'EXPENSE',
+            category: 'PAYROLL',
+            amount: row.netAmount,
+            transactionDate: payDate,
+            sourceRef: 'PAYROLL:' + id,
+            payrollRunId: id,
+          },
+        })
+
+        return p
+      })
+
+      await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action, entityType: 'PAYROLL_RUN', entityId: id, metadata: { amount: row.netAmount.toString() } })
+      return NextResponse.json({ payrollRun: u })
+    }
+
+    if (action === 'CANCEL') {
+      if (!['DRAFT', 'APPROVED'].includes(row.status)) return NextResponse.json({ error: 'Payroll tidak dapat dibatalkan pada status ini.' }, { status: 409 })
+      const u = await prisma.payrollRun.update({ where: { id }, data: { status: 'CANCELLED' } })
+      await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action, entityType: 'PAYROLL_RUN', entityId: id })
+      return NextResponse.json({ payrollRun: u })
+    }
+
+    return NextResponse.json({ error: 'Action tidak didukung.' }, { status: 400 })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal memproses payroll.' }, { status: 400 })
+  }
+}

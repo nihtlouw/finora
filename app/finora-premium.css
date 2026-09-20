@@ -2122,3 +2122,123 @@ body{
   .f-detail-page .f-detail-profile-grid-wide .full{grid-column:auto!important}
   .f-detail-summary-actions{padding:11px 13px!important}
 }
+
+
+/* ==========================================================================
+   Phase A domain pages — Employees / Payroll
+   ========================================================================== */
+.f-domain-page{padding-bottom:34px!important}
+.f-domain-kpis{margin-bottom:12px!important}
+.f-domain-card{overflow:hidden!important}
+.f-domain-toolbar{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:12px!important;padding:12px 14px!important;border-bottom:1px solid #e8e9e3!important;
+}
+.f-domain-toolbar>div:first-child{display:flex!important;flex-direction:column!important;gap:3px!important}
+.f-domain-toolbar>div:first-child strong{font-size:11px!important;color:#24322f!important}
+.f-domain-toolbar>div:first-child span{font-size:8px!important;color:#8a938e!important}
+.f-domain-filters{display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap!important}
+.f-domain-filters .f-input{width:240px!important}
+.f-domain-filters .f-select{min-width:125px!important}
+.f-domain-table td{vertical-align:middle!important}
+.f-table-sub{
+  display:block!important;margin-top:2px!important;
+  font-size:8px!important;color:#919893!important;font-weight:500!important;
+}
+.f-row-actions{display:flex!important;align-items:center!important;gap:5px!important;flex-wrap:wrap!important}
+.f-domain-modal{
+  width:min(760px,calc(100vw - 28px))!important;
+  max-height:calc(100dvh - 28px)!important;
+  overflow:auto!important;
+}
+.f-domain-form-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;padding:15px!important;
+}
+.f-domain-form-grid label{display:flex!important;flex-direction:column!important;gap:5px!important}
+.f-domain-form-grid .f-domain-span-2{grid-column:span 2!important}
+.f-modal-actions{
+  display:flex!important;justify-content:flex-end!important;gap:6px!important;
+  padding:12px 15px!important;border-top:1px solid #e8e9e3!important;
+}
+.f-domain-drawer{
+  position:absolute!important;right:0!important;top:0!important;bottom:0!important;
+  width:min(860px,96vw)!important;max-width:100%!important;
+  background:#fffefa!important;border-left:1px solid #dfe2da!important;
+  box-shadow:-18px 0 44px rgba(19,33,29,.16)!important;
+  overflow:auto!important;
+}
+.f-domain-drawer-head{
+  position:sticky!important;top:0!important;z-index:2!important;
+  display:flex!important;align-items:flex-start!important;justify-content:space-between!important;
+  gap:16px!important;padding:18px 20px!important;
+  background:#fffefa!important;border-bottom:1px solid #e8e9e3!important;
+}
+.f-domain-drawer-head h2{margin:3px 0 0!important;font-size:20px!important;letter-spacing:-.035em!important;color:#17211e!important}
+.f-domain-drawer-head p{margin:5px 0 0!important;font-size:9px!important;color:#828a85!important}
+.f-domain-drawer-body{display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important}
+.f-domain-detail-grid{
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;
+}
+.f-domain-detail-grid>div{
+  min-height:60px!important;padding:11px!important;
+  background:#f6f7f2!important;border:1px solid #e6e8e2!important;border-radius:7px!important;
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+}
+.f-domain-detail-grid span{font-size:7px!important;color:#8f9691!important;text-transform:uppercase!important;letter-spacing:.08em!important;font-weight:800!important}
+.f-domain-detail-grid strong{font-size:10px!important;color:#2b3934!important}
+.f-domain-workflow{
+  display:flex!important;align-items:center!important;gap:8px!important;padding:14px 15px!important;
+  color:#9aa19c!important;font-size:9px!important;font-weight:800!important;
+}
+.f-domain-workflow div{
+  padding:7px 10px!important;border:1px solid #e1e4de!important;border-radius:999px!important;background:#f4f4ef!important;
+}
+.f-domain-workflow div.current{background:#e8f1eb!important;color:#126158!important;border-color:#cfe0d6!important}
+.f-domain-workflow div.done{background:#eff5f0!important;color:#4f7a6b!important;border-color:#dce8e0!important}
+.f-domain-source-row{
+  display:flex!important;align-items:center!important;gap:10px!important;padding:13px 15px!important;
+}
+.f-domain-source-row strong{font-size:13px!important;color:#17332d!important}
+.f-domain-source-row span{font-size:9px!important;color:#828a85!important;margin-right:auto!important}
+.f-payroll-create-modal{width:min(1120px,calc(100vw - 24px))!important}
+.f-payroll-header-form{grid-template-columns:1.2fr .8fr .8fr!important;border-bottom:1px solid #e8e9e3!important}
+.f-payroll-draft-lines{padding:12px 15px!important;display:flex!important;flex-direction:column!important;gap:6px!important}
+.f-payroll-draft-row{
+  display:grid!important;grid-template-columns:1.5fr repeat(4,minmax(110px,.7fr)) 130px!important;
+  gap:7px!important;align-items:end!important;padding:9px!important;
+  border:1px solid #e7e9e4!important;border-radius:7px!important;background:#fafaf6!important;
+}
+.f-payroll-draft-row label{display:flex!important;flex-direction:column!important;gap:4px!important}
+.f-payroll-draft-employee{min-width:0!important;display:flex!important;flex-direction:column!important;gap:3px!important;padding-bottom:4px!important}
+.f-payroll-draft-employee strong{font-size:9px!important;color:#273630!important}
+.f-payroll-draft-employee span{font-size:7px!important;color:#909791!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.f-payroll-draft-net{
+  min-height:34px!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;
+  font-size:10px!important;color:#17352e!important;white-space:nowrap!important;
+}
+.f-payroll-draft-summary{
+  display:flex!important;justify-content:flex-end!important;gap:20px!important;
+  padding:12px 15px!important;border-top:1px solid #e8e9e3!important;
+  font-size:8px!important;color:#818a84!important;
+}
+.f-payroll-draft-summary strong{display:block!important;margin-top:3px!important;font-size:12px!important;color:#21352f!important}
+.f-payroll-drawer{width:min(980px,96vw)!important}
+.f-payroll-detail-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important;margin-bottom:0!important}
+@media(max-width:900px){
+  .f-domain-toolbar{align-items:flex-start!important;flex-direction:column!important}
+  .f-domain-filters{width:100%!important}
+  .f-domain-filters .f-input{width:100%!important}
+  .f-domain-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .f-payroll-draft-row{grid-template-columns:1fr 1fr!important}
+  .f-payroll-draft-employee{grid-column:1/-1!important}
+  .f-payroll-draft-net{justify-content:flex-start!important}
+  .f-payroll-header-form{grid-template-columns:1fr!important}
+}
+@media(max-width:560px){
+  .f-domain-form-grid{grid-template-columns:1fr!important}
+  .f-domain-form-grid .f-domain-span-2{grid-column:auto!important}
+  .f-domain-detail-grid{grid-template-columns:1fr!important}
+  .f-payroll-drawer{width:100vw!important}
+}

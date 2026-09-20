@@ -131,7 +131,7 @@ async function main() {
     },
   })
 
-  const stalled = await prisma.project.findUnique({
+  const stalled = await prisma.project.findFirst({
     where: { projectCode: 'FIN-UAT-CIKARANG-STALLED-2026' },
     include: { billingMilestones: { orderBy: { sequence: 'asc' } }, expenses: true, changeOrders: true },
   })
@@ -149,7 +149,7 @@ async function main() {
     assert(stalled.changeOrders.some((order) => order.status === 'SUBMITTED' && n(order.approvedAmount) === 0), 'STALLED: expected submitted unapproved change order')
   }
 
-  const completed = await prisma.project.findUnique({
+  const completed = await prisma.project.findFirst({
     where: { projectCode: 'FIN-UAT-SS3-COMPLETED-2026' },
     include: { expenses: true },
   })

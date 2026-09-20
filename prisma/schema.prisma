@@ -742,6 +742,11 @@ model Employee {
   email          String?
   taxId          String?
   maritalStatus  String?
+  position       String?
+  department     String?
+  employmentType String   @default("FULL_TIME")
+  joinDate       DateTime? @db.Date
+  endDate        DateTime? @db.Date
   baseSalary     Decimal  @default(0) @db.Decimal(18,2)
   bankName       String?
   bankAccount    String?
@@ -750,6 +755,8 @@ model Employee {
   payrollLines   PayrollLine[]
   @@unique([workspaceId, employeeNo])
   @@index([workspaceId, isActive])
+  @@index([workspaceId, department])
+  @@index([workspaceId, employmentType])
 }
 
 model PayrollRun {
