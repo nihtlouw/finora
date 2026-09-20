@@ -11,7 +11,8 @@ This folder is the controlled reference set for implementing Finora. Code change
 5. `FINORA-05-API-AUTH-CONTRACT.md` — API, roles, permissions, mutation rules.
 6. `FINORA-06-UI-PAGE-SPEC.md` — UI structure and interaction contract.
 7. `FINORA-07-UAT-MASTER-MATRIX.md` — acceptance tests and definition of done.
-8. `FINORA-MASTER-PRD-ERD.md` — condensed master baseline and navigation.
+8. `FINORA-08-DATABASE-CHANGE-POLICY.md` — schema changes, UAT application, production safety.
+9. `FINORA-MASTER-PRD-ERD.md` — condensed master baseline and navigation.
 
 ## Change rule
 
