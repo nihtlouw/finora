@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { getCurrentFinoraContext, canManageFinance } from '@/lib/auth/current-user'
-import { dateOnly, positiveMoney, requireText } from '@/lib/validation/finance'
+import { centsToDecimal, dateOnly, positiveMoney, requireText } from '@/lib/validation/finance'
 import { parseAllocationPercentage } from '@/lib/expenses'
 import { writeAuditLog } from '@/lib/audit'
 import { assertAccountingPeriodOpen } from '@/lib/finance-period'
@@ -21,7 +21,7 @@ type PayrollLineInput = {
 
 function allocationAmountFromCents(grossCents: bigint, percentage: number) {
   const basisPoints = parseAllocationPercentage(percentage)
-  return (grossCents * BigInt(basisPoints) / 10000n).toString()
+  return centsToDecimal(grossCents * BigInt(basisPoints) / 10000n)
 }
 
 export async function GET() {
