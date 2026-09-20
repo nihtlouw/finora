@@ -52,6 +52,13 @@ async function main() {
   const seededEmployeeNos = ['EMP-001','EMP-002','EMP-003','EMP-004','EMP-005','EMP-006','EMP-007','EMP-008']
   assert(seededEmployeeNos.every(no => employees.some(x => x.employeeNo === no)), '8 employee UAT belum lengkap.')
 
+  for (const employee of employees.filter((x) => seededEmployeeNos.includes(x.employeeNo))) {
+    assert(!!employee.position, `Employee ${employee.employeeNo} belum memiliki position.`)
+    assert(!!employee.department, `Employee ${employee.employeeNo} belum memiliki department.`)
+    assert(['FULL_TIME','CONTRACT','DAILY_WORKER','INTERN'].includes(employee.employmentType), `Employee ${employee.employeeNo} memiliki employmentType invalid.`)
+    assert(!!employee.joinDate, `Employee ${employee.employeeNo} belum memiliki joinDate.`)
+  }
+
   const payroll = await prisma.payrollRun.findFirst({
     where: { workspaceId: workspace.id, period: '2026-09', runNumber: 'PAY-2026-09-001' },
     include: { lines: { include: { employee: true, allocations: true } } },
