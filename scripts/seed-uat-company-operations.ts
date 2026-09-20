@@ -40,14 +40,14 @@ async function getOwnerContext() {
 }
 
 const EMPLOYEES = [
-  { employeeNo: 'EMP-001', name: 'Andi Pratama', role: 'Project Manager', salary: 18_000_000, bank: 'BCA', account: '3901000001' },
-  { employeeNo: 'EMP-002', name: 'Budi Santoso', role: 'Site Engineer', salary: 12_000_000, bank: 'BCA', account: '3901000002' },
-  { employeeNo: 'EMP-003', name: 'Citra Lestari', role: 'Finance', salary: 10_000_000, bank: 'Mandiri', account: '1409000003' },
-  { employeeNo: 'EMP-004', name: 'Dedi Kurniawan', role: 'Procurement', salary: 9_000_000, bank: 'BCA', account: '3901000004' },
-  { employeeNo: 'EMP-005', name: 'Eko Saputra', role: 'Electrical Engineer', salary: 11_000_000, bank: 'BCA', account: '3901000005' },
-  { employeeNo: 'EMP-006', name: 'Fajar Hidayat', role: 'HSE', salary: 8_500_000, bank: 'BCA', account: '3901000006' },
-  { employeeNo: 'EMP-007', name: 'Guntur Wijaya', role: 'Technician', salary: 7_500_000, bank: 'Mandiri', account: '1409000007' },
-  { employeeNo: 'EMP-008', name: 'Hendra', role: 'Technician', salary: 7_000_000, bank: 'BCA', account: '3901000008' },
+  { employeeNo: 'EMP-001', name: 'Andi Pratama', position: 'Project Manager', department: 'Project', employmentType: 'FULL_TIME', salary: 18_000_000, bank: 'BCA', account: '3901000001' },
+  { employeeNo: 'EMP-002', name: 'Budi Santoso', position: 'Site Engineer', department: 'Engineering', employmentType: 'FULL_TIME', salary: 12_000_000, bank: 'BCA', account: '3901000002' },
+  { employeeNo: 'EMP-003', name: 'Citra Lestari', position: 'Finance Officer', department: 'Finance', employmentType: 'FULL_TIME', salary: 10_000_000, bank: 'Mandiri', account: '1409000003' },
+  { employeeNo: 'EMP-004', name: 'Dedi Kurniawan', position: 'Procurement Officer', department: 'Procurement', employmentType: 'FULL_TIME', salary: 9_000_000, bank: 'BCA', account: '3901000004' },
+  { employeeNo: 'EMP-005', name: 'Eko Saputra', position: 'Electrical Engineer', department: 'Engineering', employmentType: 'FULL_TIME', salary: 11_000_000, bank: 'BCA', account: '3901000005' },
+  { employeeNo: 'EMP-006', name: 'Fajar Hidayat', position: 'HSE Officer', department: 'HSE', employmentType: 'FULL_TIME', salary: 8_500_000, bank: 'BCA', account: '3901000006' },
+  { employeeNo: 'EMP-007', name: 'Guntur Wijaya', position: 'Electrical Technician', department: 'Engineering', employmentType: 'CONTRACT', salary: 7_500_000, bank: 'Mandiri', account: '1409000007' },
+  { employeeNo: 'EMP-008', name: 'Hendra', position: 'Electrical Technician', department: 'Engineering', employmentType: 'CONTRACT', salary: 7_000_000, bank: 'BCA', account: '3901000008' },
 ] as const
 
 type PayrollLineSeed = {
@@ -143,6 +143,10 @@ async function seedEmployees(workspaceId: string) {
         name: item.name,
         email: `${item.employeeNo.toLowerCase()}@finora-uat.invalid`,
         maritalStatus: 'TK/0',
+        position: item.position,
+        department: item.department,
+        employmentType: item.employmentType,
+        joinDate: date(item.employeeNo === 'EMP-007' || item.employeeNo === 'EMP-008' ? '2026-01-15' : '2024-03-01'),
         baseSalary: money(item.salary),
         bankName: item.bank,
         bankAccount: item.account,
