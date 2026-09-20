@@ -27,7 +27,9 @@
     "seed:uat-po-hurip-ss3": "node --experimental-strip-types scripts/seed-uat-po-hurip-ss3.ts",
     "qa:uat-po-hurip-ss3": "node --experimental-strip-types scripts/qa-uat-po-hurip-ss3.ts",
     "seed:uat-three-projects": "node --experimental-strip-types scripts/seed-uat-three-projects.ts",
-    "qa:uat-three-projects": "node --experimental-strip-types scripts/qa-uat-three-projects.ts"
+    "qa:uat-three-projects": "node --experimental-strip-types scripts/qa-uat-three-projects.ts",
+    "seed:uat-company-operations": "node --experimental-strip-types scripts/seed-uat-company-operations.ts",
+    "qa:uat-company-operations": "node --experimental-strip-types scripts/qa-uat-company-operations.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.2",
