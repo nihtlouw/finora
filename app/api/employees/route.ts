@@ -25,36 +25,39 @@ export async function GET() {
   if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll/employee data hanya dapat diakses Owner/Finance.' }, { status: 403 })
 
-  const rows = await prisma.employee.findMany({
-    where: { workspaceId: c.workspace.id },
-    orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
-    include: {
-      payrollLines: {
-        orderBy: { payrollRun: { payDate: 'desc' } },
-        take: 1,
-        include: {
-          payrollRun: {
-            select: {
-              id: true,
-              runNumber: true,
-              period: true,
-              status: true,
-              payDate: true,
-            },
+  const [rows, latestPayrollLines] = await Promise.all([
+    prisma.employee.findMany({
+      where: { workspaceId: c.workspace.id },
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+    }),
+    prisma.payrollLine.findMany({
+      where: { payrollRun: { workspaceId: c.workspace.id } },
+      include: {
+        payrollRun: {
+          select: {
+            id: true,
+            runNumber: true,
+            period: true,
+            status: true,
+            payDate: true,
           },
         },
       },
-    },
-  })
+      orderBy: { payrollRun: { payDate: 'desc' } },
+    }),
+  ])
 
   const mask = (value: string | null) => value ? '••••' + value.slice(-4) : null
+  const latestByEmployee = new Map<string, typeof latestPayrollLines[number]['payrollRun']>()
+  for (const line of latestPayrollLines) {
+    if (!latestByEmployee.has(line.employeeId)) latestByEmployee.set(line.employeeId, line.payrollRun)
+  }
 
   const employees = rows.map((row) => ({
     ...row,
     taxId: mask(row.taxId),
     bankAccount: mask(row.bankAccount),
-    latestPayroll: row.payrollLines[0]?.payrollRun ?? null,
-    payrollLines: undefined,
+    latestPayroll: latestByEmployee.get(row.id) ?? null,
   }))
 
   return NextResponse.json({ employees })
