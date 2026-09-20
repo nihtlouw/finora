@@ -968,7 +968,7 @@ Immutable audit trail.
 Roles:
 - OWNER
 - FINANCE
-- PROJECT
+- SALES
 - VIEWER
 
 Every sensitive financial mutation should produce AuditLog.
