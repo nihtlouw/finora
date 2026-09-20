@@ -21,6 +21,7 @@ function normalizeEmploymentType(value: unknown) {
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const c = await getCurrentFinoraContext()
   if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!canManageFinance(c.user.role)) return NextResponse.json({ error: 'Payroll/employee data hanya dapat diakses Owner/Finance.' }, { status: 403 })
 
   const { id } = await params
   const employee = await prisma.employee.findFirst({
