@@ -29,9 +29,9 @@ Gross: Rp83.000.000
 Deductions: Rp4.750.000  
 Net: Rp78.250.000
 
-Allocation payroll:
-- RSPAD sekitar Rp55.100.000 gross-net allocation basis
-- Cikarang sekitar Rp27.900.000 gross-net allocation basis
+Allocation payroll (cost basis gross; cashflow payroll tetap net):
+- RSPAD payroll allocation sekitar Rp55.100.000 berdasarkan gross payroll cost
+- Cikarang payroll allocation sekitar Rp27.900.000 berdasarkan gross payroll cost
 
 Catatan: nominal PPh 21/BPJS adalah angka simulasi UAT, bukan perhitungan pajak final.
 
