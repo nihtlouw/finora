@@ -196,13 +196,13 @@ async function seedPayroll(workspaceId: string, ownerId: string) {
       runNumber: 'PAY-2026-09-001',
       period: '2026-09',
       status: 'PAID',
-      payDate: date('2026-09-25'),
+      payDate: date('2026-09-19'),
       grossAmount: money(grossTotal),
       deductionAmount: money(deductionTotal),
       netAmount: money(netTotal),
       approvedAt: date('2026-09-20'),
       approvedByUserId: ownerId,
-      paidAt: date('2026-09-25'),
+      paidAt: date('2026-09-19'),
       paidByUserId: ownerId,
       lines: {
         create: PAYROLL_LINES.map((line) => {
@@ -221,7 +221,7 @@ async function seedPayroll(workspaceId: string, ownerId: string) {
               create: line.allocations.map((allocation) => ({
                 projectId: projects.get(allocation.projectCode)!,
                 percentage: pct(allocation.percentage),
-                amount: money((net * allocation.percentage) / 100),
+                amount: money((line.gross * allocation.percentage) / 100),
               })),
             },
           }
