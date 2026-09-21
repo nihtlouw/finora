@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Badge, Card, PageHeader, StatCard, money } from '@/components/finora-ui'
+import { Badge, Card, PageHeader, SideDrawer, money } from '@/components/finora-ui'
 
 type PO = { id:string; poNumber:string; poDate:string; receivedDate:string; status:string; totalAmount:any; taxAmount:any; grandTotal:any; overheadAmount?:any; roundingAmount?:any; roundedGrandTotal?:any; commercialVarianceAmount?:any; commercialVarianceReason?:string|null; reference?:string|null; remarks?:string|null; client:{id:string;name:string}; quotation?:{id:string;proposalNumber:string;projectName?:string|null;status:string}|null; project?:{id:string;projectCode:string;projectName:string;status:string}|null }
 type Project = { id:string; projectCode:string; projectName:string; location?:string|null; status:string; contractValue:any; client:{id:string;name:string}; proposal?:{proposalNumber:string;status:string}|null; customerPO?:{poNumber:string;status:string;grandTotal:any}|null; executionMilestones?:{sequence:number;code:string;name:string;status:string;progressPct:any;plannedDate?:string|null;actualDate?:string|null}[] }
@@ -36,18 +36,258 @@ export function CustomerPOManager({role}:{role:string}){
 }
 
 export function ProjectsManager({role}:{role:string}){
-  const params=useSearchParams(); const preselected=params.get('customerPoId')||''
-  const [rows,setRows]=useState<Project[]>([]),[pos,setPos]=useState<PO[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
+  const params=useSearchParams()
+  const preselected=params.get('customerPoId')||''
+  const [rows,setRows]=useState<Project[]>([])
+  const [pos,setPos]=useState<PO[]>([])
+  const [clients,setClients]=useState<Client[]>([])
+  const [busy,setBusy]=useState(false)
+  const [message,setMessage]=useState('')
+  const [q,setQ]=useState('')
+  const [poNumber,setPoNumber]=useState('')
+  const [statusFilter,setStatusFilter]=useState('ALL')
+  const [clientFilter,setClientFilter]=useState('ALL')
+  const [filtersOpen,setFiltersOpen]=useState(false)
+  const [loading,setLoading]=useState(true)
+  const [drawerOpen,setDrawerOpen]=useState(false)
   const [form,setForm]=useState({customerPoId:preselected,projectCode:'',projectName:'',location:'',startDate:'',targetEndDate:'',notes:''})
   const can=role==='OWNER'||role==='FINANCE'
-  async function load(){const [a,b]=await Promise.all([fetch('/api/projects'),fetch('/api/customer-pos')]);const [ad,bd]=await Promise.all([body(a),body(b)]);setRows(ad.projects||[]);setPos((bd.customerPOs||[]).filter((x:PO)=>x.status==='VERIFIED'&&!x.project))}
-  useEffect(()=>{load()},[])
-  useEffect(()=>{if(preselected)setForm(f=>({...f,customerPoId:preselected}))},[preselected])
-  useEffect(()=>{const po=pos.find(x=>x.id===form.customerPoId);if(po)setForm(f=>({...f,projectName:po.quotation?.projectName||f.projectName,location:'',}))},[form.customerPoId,pos])
-  async function save(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage('');try{const r=await fetch('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});const d=await body(r);if(!r.ok)throw new Error(d.error||'Gagal membuat project.');setMessage('Project berhasil dibuat.');setForm(f=>({...f,customerPoId:'',projectCode:'',projectName:'',location:'',startDate:'',targetEndDate:'',notes:''}));await load()}catch(e){setMessage(e instanceof Error?e.message:'Gagal membuat project.')}finally{setBusy(false)}}
-  return <div className="f-content"><PageHeader eyebrow="PROJECT COMMERCIAL" title="Project" description="Kelola project yang berasal dari PO customer dan quotation yang sudah disetujui." action={message&&<span className="f-badge green">{message}</span>} />
-    <div className="f-grid-4"><StatCard label="Total project" value={rows.length} icon="▤"/><StatCard label="Planned" value={rows.filter(x=>x.status==='PLANNED').length} icon="○"/><StatCard label="Active" value={rows.filter(x=>x.status==='ACTIVE').length} icon="↗"/><StatCard label="Contract value" value={money(rows.reduce((s,x)=>s+Number(x.contractValue||0),0))} icon="Rp"/></div>
-    {can&&<Card className="f-section-gap"><div className="f-card-head"><div><h3>Buat project dari PO</h3><p>Project memakai nilai kontrak dari grand total PO dan referensi quotation otomatis.</p></div></div><form className="f-form" onSubmit={save}><div className="f-form-grid"><label>PO Verified<select className="f-input" value={form.customerPoId} onChange={e=>setForm(f=>({...f,customerPoId:e.target.value}))}><option value="">Pilih PO</option>{pos.map(p=><option key={p.id} value={p.id}>{p.poNumber} — {p.client.name} — {money(Number(p.grandTotal))}</option>)}</select></label><label>Kode project<input className="f-input" value={form.projectCode} onChange={e=>setForm(f=>({...f,projectCode:e.target.value}))} placeholder="BSM-2026-001" /></label><label>Nama project<input className="f-input" value={form.projectName} onChange={e=>setForm(f=>({...f,projectName:e.target.value}))} /></label><label>Lokasi<input className="f-input" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} /></label><label>Mulai<input type="date" className="f-input" value={form.startDate} onChange={e=>setForm(f=>({...f,startDate:e.target.value}))} /></label><label>Target selesai<input type="date" className="f-input" value={form.targetEndDate} onChange={e=>setForm(f=>({...f,targetEndDate:e.target.value}))} /></label><label className="full">Catatan<textarea className="f-input" rows={3} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></label></div><div className="f-actions"><button className="f-btn primary" disabled={busy}>Buat Project</button></div></form></Card>}
-    <Card className="f-section-gap"><div className="f-card-head"><div><h3>Daftar project</h3><p>Project menjadi unit kerja untuk tahap billing, execution, dan actual cost.</p></div></div>{rows.length?<div className="f-project-list">{rows.map(x=>{const milestones=x.executionMilestones||[];const progress=milestones.length?Math.round(milestones.reduce((sum,m)=>sum+Number(m.progressPct||0),0)/milestones.length):0;return <article className="f-project-row" key={x.id}><div><div className="f-project-meta"><strong>{x.projectCode}</strong><Badge tone={tone(x.status)}>{x.status}</Badge></div><div style={{fontSize:13,fontWeight:800,color:'#24342f',marginTop:4}}>{x.projectName}</div><div className="f-muted" style={{fontSize:10,marginTop:3}}>{x.location||'Lokasi belum ditentukan'}</div></div><div><div className="f-project-progress-head"><span>Execution progress</span><strong>{progress}%</strong></div><div className="f-progress"><span style={{width:`${progress}%`}}/></div><div className="f-muted f-project-progress-note" style={{fontSize:10,marginTop:5}} >{milestones.length?`${milestones.length} milestone`:'Foundation belum memiliki milestone'}</div></div><div><div className="f-muted" style={{fontSize:10}}>Contract value</div><div className="f-project-money">{money(Number(x.contractValue))}</div><div className="f-muted" style={{fontSize:10,marginTop:3}}>PO: {x.customerPO?.poNumber||'—'}</div></div><div className="f-project-actions"><a className="f-btn soft" href={`/projects/${x.id}`}>Detail</a></div></article>})}</div>:<div className="f-empty"><strong>Belum ada project</strong>Buat project dari PO yang sudah diverifikasi.</div>}</Card>
+
+  async function loadProjects(){
+    setLoading(true)
+    try{
+      const search=new URLSearchParams()
+      if(q.trim())search.set('q',q.trim())
+      if(poNumber.trim())search.set('poNumber',poNumber.trim())
+      if(statusFilter!=='ALL')search.set('status',statusFilter)
+      if(clientFilter!=='ALL')search.set('clientId',clientFilter)
+      const suffix=search.toString()
+      const response=await fetch('/api/projects'+(suffix?'?'+suffix:''),{cache:'no-store'})
+      const data=await body(response)
+      if(!response.ok)throw new Error(data.error||'Gagal memuat project.')
+      setRows(data.projects||[])
+    }catch(e){
+      setMessage(e instanceof Error?e.message:'Gagal memuat project.')
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  async function loadSupportingData(){
+    const [b,c]=await Promise.all([
+      fetch('/api/customer-pos',{cache:'no-store'}),
+      fetch('/api/clients?type=CLIENT',{cache:'no-store'})
+    ])
+    const [bd,cd]=await Promise.all([body(b),body(c)])
+    setPos((bd.customerPOs||[]).filter((x:PO)=>x.status==='VERIFIED'&&!x.project))
+    setClients(cd.clients||[])
+  }
+
+  useEffect(()=>{void loadSupportingData();void loadProjects()},[])
+  useEffect(()=>{
+    const timer=window.setTimeout(()=>void loadProjects(),250)
+    return()=>window.clearTimeout(timer)
+  },[q,poNumber,statusFilter,clientFilter])
+
+  useEffect(()=>{
+    if(preselected){
+      setForm(f=>({...f,customerPoId:preselected}))
+      setDrawerOpen(true)
+    }
+  },[preselected])
+
+  useEffect(()=>{
+    const po=pos.find(x=>x.id===form.customerPoId)
+    if(po)setForm(f=>({...f,projectName:po.quotation?.projectName||f.projectName,location:f.location||''}))
+  },[form.customerPoId,pos])
+
+  function openCreate(){
+    setMessage('')
+    setForm(f=>({...f}))
+    setDrawerOpen(true)
+  }
+
+  function closeCreate(){
+    if(busy)return
+    setDrawerOpen(false)
+  }
+
+  async function save(e:React.FormEvent){
+    e.preventDefault()
+    setBusy(true)
+    setMessage('')
+    try{
+      const r=await fetch('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
+      const d=await body(r)
+      if(!r.ok)throw new Error(d.error||'Gagal membuat project.')
+      setMessage('Project berhasil dibuat.')
+      setDrawerOpen(false)
+      setForm({customerPoId:'',projectCode:'',projectName:'',location:'',startDate:'',targetEndDate:'',notes:''})
+      await Promise.all([loadProjects(),loadSupportingData()])
+    }catch(e){
+      setMessage(e instanceof Error?e.message:'Gagal membuat project.')
+    }finally{
+      setBusy(false)
+    }
+  }
+
+  const selectedPO=pos.find(x=>x.id===form.customerPoId)
+  const activeCount=rows.filter(x=>x.status==='ACTIVE').length
+  const plannedCount=rows.filter(x=>x.status==='PLANNED').length
+  const filteredContractValue=rows.reduce((s,x)=>s+Number(x.contractValue||0),0)
+
+  return <div className="f-content">
+    <PageHeader
+      eyebrow="PROJECT PORTFOLIO"
+      title="Projects"
+      description="Satu daftar kerja untuk memahami project, customer, PO, progress, nilai kontrak, dan status."
+      action={<>
+        {message&&<span className="f-badge green">{message}</span>}
+        {can&&<button className="f-btn primary" type="button" onClick={openCreate}>+ New Project</button>}
+      </>}
+    />
+
+    <div className="f-project-summary" aria-label="Ringkasan project">
+      <span><strong>{rows.length}</strong> project</span>
+      <span><strong>{activeCount}</strong> aktif</span>
+      <span><strong>{plannedCount}</strong> planned</span>
+      <span><strong>{money(filteredContractValue)}</strong> nilai contract</span>
+    </div>
+
+    <Card className="f-project-search-card f-section-gap">
+      <div className="f-project-search-toolbar">
+        <div className="f-project-search-main">
+          <label className="f-project-search-box">
+            <span>⌕</span>
+            <input
+              className="f-input"
+              value={q}
+              onChange={e=>setQ(e.target.value)}
+              placeholder="Cari project, client, no. PO, quotation, atau lokasi..."
+              aria-label="Cari project"
+            />
+          </label>
+          <button className="f-btn" type="button" onClick={()=>setFiltersOpen(v=>!v)}>
+            {filtersOpen?'Tutup filter':'Filter'}
+          </button>
+        </div>
+        <div className="f-project-quick-tabs">
+          {[
+            ['ALL','All'],
+            ['ACTIVE','Active'],
+            ['ON_HOLD','On Hold'],
+            ['COMPLETED','Completed'],
+          ].map(([value,label])=><button key={value} className={statusFilter===value?'is-active':''} type="button" onClick={()=>setStatusFilter(value)}>{label}</button>)}
+        </div>
+      </div>
+
+      {filtersOpen&&<div className="f-project-filter-panel">
+        <label>
+          <span>No. PO Customer</span>
+          <input className="f-input" value={poNumber} onChange={e=>setPoNumber(e.target.value)} placeholder="Contoh: 00077/PO/HU/VIII/2026"/>
+        </label>
+        <label>
+          <span>Client</span>
+          <select className="f-select" value={clientFilter} onChange={e=>setClientFilter(e.target.value)}>
+            <option value="ALL">Semua client</option>
+            {clients.map(client=><option key={client.id} value={client.id}>{client.name}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select className="f-select" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+            <option value="ALL">Semua status</option>
+            <option value="DRAFT">DRAFT</option>
+            <option value="PLANNED">PLANNED</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="ON_HOLD">ON HOLD</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="CLOSED">CLOSED</option>
+            <option value="CANCELLED">CANCELLED</option>
+          </select>
+        </label>
+        <div className="f-project-filter-actions">
+          <button className="f-btn" type="button" onClick={()=>{setQ('');setPoNumber('');setClientFilter('ALL');setStatusFilter('ALL')}}>Reset</button>
+        </div>
+      </div>}
+
+      {(q||poNumber||clientFilter!=='ALL'||statusFilter!=='ALL')&&<div className="f-project-filter-chips">
+        {q&&<button type="button" onClick={()=>setQ('')}>Search: {q} ×</button>}
+        {poNumber&&<button type="button" onClick={()=>setPoNumber('')}>PO: {poNumber} ×</button>}
+        {clientFilter!=='ALL'&&<button type="button" onClick={()=>setClientFilter('ALL')}>Client: {clients.find(x=>x.id===clientFilter)?.name||clientFilter} ×</button>}
+        {statusFilter!=='ALL'&&<button type="button" onClick={()=>setStatusFilter('ALL')}>Status: {statusFilter} ×</button>}
+      </div>}
+    </Card>
+
+    <Card className="f-section-gap">
+      <div className="f-card-head">
+        <div><h3>All projects</h3><p>Open a project to see commercial, execution, billing, payment, cost, profitability, and documents in one context.</p></div>
+        <span className="f-muted">{loading?'Loading…':rows.length+' result'}</span>
+      </div>
+      {loading?<div className="f-empty">Memuat project…</div>:rows.length?<div className="f-table-wrap">
+        <table className="f-table f-project-table">
+          <thead><tr><th>Project</th><th>Customer</th><th>No. PO</th><th>Progress</th><th>Contract Value</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            {rows.map(x=>{
+              const milestones=x.executionMilestones||[]
+              const progress=milestones.length?Math.round(milestones.reduce((sum,m)=>sum+Number(m.progressPct||0),0)/milestones.length):0
+              return <tr key={x.id}>
+                <td><strong>{x.projectCode}</strong><span className="f-table-sub">{x.projectName}</span><span className="f-table-sub">{x.location||'Lokasi belum ditentukan'}</span></td>
+                <td><strong>{x.client.name}</strong><span className="f-table-sub">{x.proposal?.proposalNumber||'No quotation'}</span></td>
+                <td>{x.customerPO?<><strong>{x.customerPO.poNumber}</strong><span className="f-table-sub">{x.customerPO.status}</span></>:<span className="f-muted">—</span>}</td>
+                <td><div className="f-project-table-progress"><div className="f-project-progress-head"><span>Execution</span><strong>{progress}%</strong></div><div className="f-progress"><span style={{width:String(progress)+'%'}}/></div></div></td>
+                <td className="f-number"><strong>{money(Number(x.contractValue))}</strong></td>
+                <td><Badge tone={tone(x.status)}>{x.status}</Badge></td>
+                <td><a className="f-btn soft" href={'/projects/'+x.id}>Open</a></td>
+              </tr>
+            })}
+          </tbody>
+        </table>
+      </div>:<div className="f-empty"><strong>Tidak ada project yang cocok</strong><span>Coba ubah pencarian atau reset filter.</span></div>}
+    </Card>
+
+    <SideDrawer
+      open={drawerOpen}
+      onClose={closeCreate}
+      title="Create project"
+      description="Project hanya dibuat dari Customer PO yang sudah VERIFIED dan terhubung ke proposal WON."
+      footer={<div className="f-drawer-actions"><button className="f-btn" type="button" onClick={closeCreate} disabled={busy}>Cancel</button><button className="f-btn primary" form="create-project-drawer-form" type="submit" disabled={busy}>{busy?'Creating…':'Create Project'}</button></div>}
+    >
+      <form id="create-project-drawer-form" className="f-form" onSubmit={save}>
+        {selectedPO&&<div className="f-drawer-source">
+          <div><span>Source PO</span><strong>{selectedPO.poNumber}</strong></div>
+          <div><span>Customer</span><strong>{selectedPO.client.name}</strong></div>
+          <div><span>Value</span><strong>{money(Number(selectedPO.grandTotal))}</strong></div>
+          <div><span>Proposal</span><strong>{selectedPO.quotation?.proposalNumber||'—'}</strong></div>
+        </div>}
+        <label>PO Verified
+          <select className="f-input" value={form.customerPoId} onChange={e=>setForm(f=>({...f,customerPoId:e.target.value}))} required>
+            <option value="">Pilih PO Verified</option>
+            {pos.map(p=><option key={p.id} value={p.id}>{p.poNumber+' — '+p.client.name+' — '+money(Number(p.grandTotal))}</option>)}
+          </select>
+        </label>
+        <label>Kode project
+          <input className="f-input" value={form.projectCode} onChange={e=>setForm(f=>({...f,projectCode:e.target.value}))} placeholder="FIN-PROJ-2026-001" required />
+        </label>
+        <label>Nama project
+          <input className="f-input" value={form.projectName} onChange={e=>setForm(f=>({...f,projectName:e.target.value}))} placeholder="Nama project" required />
+        </label>
+        <label>Lokasi
+          <input className="f-input" value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="Lokasi pekerjaan" />
+        </label>
+        <div className="f-form-grid">
+          <label>Mulai
+            <input type="date" className="f-input" value={form.startDate} onChange={e=>setForm(f=>({...f,startDate:e.target.value}))} />
+          </label>
+          <label>Target selesai
+            <input type="date" className="f-input" value={form.targetEndDate} onChange={e=>setForm(f=>({...f,targetEndDate:e.target.value}))} />
+          </label>
+        </div>
+        <label>Catatan
+          <textarea className="f-input" rows={4} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Catatan internal project, scope, atau konteks awal." />
+        </label>
+        <div className="f-inline-alert">Setelah dibuat, Finora otomatis menyiapkan snapshot BOQ, execution foundation, dan contract version awal dari PO ini.</div>
+      </form>
+    </SideDrawer>
   </div>
 }
