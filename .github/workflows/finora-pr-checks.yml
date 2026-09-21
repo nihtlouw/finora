@@ -1,0 +1,29 @@
+name: Finora PR checks
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - feat/ux-systematic-optimization
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: ESLint
+        run: npm run lint
