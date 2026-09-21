@@ -35,8 +35,8 @@ Guard: only VERIFIED can create a project.
 
 ## Projects
 Purpose: portfolio.
-List: project, client, status, value, revenue basis, progress, billed, collected, cost, gross profit.
-Filters: status, client, period and financial state.
+List: project code/name, client, customer PO number, status, contract value, revenue basis, progress, billed, collected, cost, gross profit.
+Filters: free-text search (project code/name/client/location/PO/proposal), status, client, customer PO number, period and financial state.
 
 ## Project Detail
 Purpose: operational cockpit.
