@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge, Card, PageHeader, StatCard, money } from '@/components/finora-ui'
+import { SideDrawer } from '@/components/finora-side-drawer'
 import { EXPENSE_CATEGORY_OPTIONS } from '@/lib/expenses'
 import ExpenseDetailPanel from '@/components/expense-detail-panel'
 
@@ -371,26 +372,17 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
       )}
 
       {open && (
-        <div
-          className="f-modal-backdrop expense-entry-backdrop"
-          role="presentation"
-          onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) setOpen(false) }}
+        <SideDrawer
+          open={open}
+          onClose={() => !busy && setOpen(false)}
+          title={editId ? 'Edit biaya project' : 'Catat pengeluaran'}
+          description="Setiap biaya baru ditautkan ke project, memiliki bukti transaksi, dan memengaruhi actual cost setelah approval."
+          footer={<div className="f-drawer-actions">
+            <button type="button" className="f-btn" onClick={() => !busy && setOpen(false)} disabled={busy}>Batal</button>
+            <button className="f-btn primary expense-save-button" form="expense-entry-form" disabled={busy || !form.projectId || !hasParty || !form.category || formTotal <= 0}>{busy ? 'Menyimpan...' : editId ? 'Simpan perubahan' : 'Simpan biaya'}</button>
+          </div>}
         >
-          <div className="f-card f-modal-card expense-entry-modal" role="dialog" aria-modal="true" aria-labelledby="expense-entry-title">
-            <div className="expense-modal-header">
-              <div className="expense-modal-heading">
-                <div className="f-eyebrow">PROJECT COST CONTROL</div>
-                <h3 id="expense-entry-title">{editId ? 'Edit biaya project' : 'Catat pengeluaran'}</h3>
-                <p>Project adalah acuan actual cost. Vendor bukan syarat mutlak — gunakan pihak/penerima bila transaksi tidak berasal dari vendor master.</p>
-              </div>
-              <div className="expense-modal-total">
-                <span>Total transaksi</span>
-                <strong>{moneyValue(formTotal)}</strong>
-              </div>
-              <button type="button" className="f-icon f-modal-close" onClick={() => !busy && setOpen(false)} aria-label="Tutup">×</button>
-            </div>
-
-            <form className="f-modal-body expense-entry-body" onSubmit={save}>
+            <form id="expense-entry-form" className="f-modal-body expense-entry-body" onSubmit={save}>
               <section className="expense-form-section">
                 <div className="expense-section-heading">
                   <div className="expense-section-number">01</div>
@@ -502,13 +494,9 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
 
               <div className="expense-entry-note"><strong>Bagaimana biaya memengaruhi project?</strong><span>Biaya yang sudah APPROVED menjadi actual cost project. Biaya di atas batas approval tetap PENDING sampai disetujui Finance/Owner.</span></div>
 
-              <div className="expense-modal-footer">
-                <button type="button" className="f-btn" onClick={() => !busy && setOpen(false)}>Batal</button>
-                <button className="f-btn primary expense-save-button" disabled={busy || !form.projectId || !hasParty || !form.category || formTotal <= 0}>{busy ? 'Menyimpan...' : editId ? 'Simpan perubahan' : 'Simpan biaya'}</button>
-              </div>
+              
             </form>
-          </div>
-        </div>
+      </SideDrawer>
       )}
     </div>
   )
