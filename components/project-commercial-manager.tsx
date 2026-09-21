@@ -48,27 +48,49 @@ export function ProjectsManager({role}:{role:string}){
   const [statusFilter,setStatusFilter]=useState('ALL')
   const [clientFilter,setClientFilter]=useState('ALL')
   const [filtersOpen,setFiltersOpen]=useState(false)
+  const [loading,setLoading]=useState(true)
   const [form,setForm]=useState({customerPoId:preselected,projectCode:'',projectName:'',location:'',startDate:'',targetEndDate:'',notes:''})
   const can=role==='OWNER'||role==='FINANCE'
 
-  async function load(){
-    const [a,b,c]=await Promise.all([
-      fetch('/api/projects',{cache:'no-store'}),
+  async function loadProjects(){
+    setLoading(true)
+    try{
+      const search=new URLSearchParams()
+      if(q.trim())search.set('q',q.trim())
+      if(poNumber.trim())search.set('poNumber',poNumber.trim())
+      if(statusFilter!=='ALL')search.set('status',statusFilter)
+      if(clientFilter!=='ALL')search.set('clientId',clientFilter)
+      const suffix=search.toString()
+      const response=await fetch('/api/projects'+(suffix?'?'+suffix:''),{cache:'no-store'})
+      const data=await body(response)
+      if(!response.ok)throw new Error(data.error||'Gagal memuat project.')
+      setRows(data.projects||[])
+    }catch(e){
+      setMessage(e instanceof Error?e.message:'Gagal memuat project.')
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  async function loadSupportingData(){
+    const [b,c]=await Promise.all([
       fetch('/api/customer-pos',{cache:'no-store'}),
       fetch('/api/clients?type=CLIENT',{cache:'no-store'})
     ])
-    const [ad,bd,cd]=await Promise.all([body(a),body(b),body(c)])
-    setRows(ad.projects||[])
+    const [bd,cd]=await Promise.all([body(b),body(c)])
     setPos((bd.customerPOs||[]).filter((x:PO)=>x.status==='VERIFIED'&&!x.project))
     setClients(cd.clients||[])
   }
 
-  useEffect(()=>{load()},[])
+  useEffect(()=>{void loadSupportingData();void loadProjects()},[])
+  useEffect(()=>{
+    const timer=window.setTimeout(()=>void loadProjects(),250)
+    return()=>window.clearTimeout(timer)
+  },[q,poNumber,statusFilter,clientFilter])
   useEffect(()=>{if(preselected)setForm(f=>({...f,customerPoId:preselected}))},[preselected])
-
   useEffect(()=>{
     const po=pos.find(x=>x.id===form.customerPoId)
-    if(po)setForm(f=>({...f,projectName:po.quotation?.projectName||f.projectName,location:f.location}))
+    if(po)setForm(f=>({...f,projectName:po.quotation?.projectName||f.projectName}))
   },[form.customerPoId,pos])
 
   async function save(e:React.FormEvent){
@@ -81,7 +103,7 @@ export function ProjectsManager({role}:{role:string}){
       if(!r.ok)throw new Error(d.error||'Gagal membuat project.')
       setMessage('Project berhasil dibuat.')
       setForm(f=>({...f,customerPoId:'',projectCode:'',projectName:'',location:'',startDate:'',targetEndDate:'',notes:''}))
-      await load()
+      await Promise.all([loadProjects(),loadSupportingData()])
     }catch(e){
       setMessage(e instanceof Error?e.message:'Gagal membuat project.')
     }finally{
@@ -89,27 +111,11 @@ export function ProjectsManager({role}:{role:string}){
     }
   }
 
-  const visibleRows=rows.filter(x=>{
-    const haystack=[
-      x.projectCode,
-      x.projectName,
-      x.location||'',
-      x.client.name,
-      x.customerPO?.poNumber||'',
-      x.proposal?.proposalNumber||''
-    ].join(' ').toLowerCase()
-    const matchesSearch=!q.trim()||haystack.includes(q.trim().toLowerCase())
-    const matchesPO=!poNumber.trim()||(x.customerPO?.poNumber||'').toLowerCase().includes(poNumber.trim().toLowerCase())
-    const matchesStatus=statusFilter==='ALL'||x.status===statusFilter
-    const matchesClient=clientFilter==='ALL'||x.client.id===clientFilter
-    return matchesSearch&&matchesPO&&matchesStatus&&matchesClient
-  })
-
-  const filteredContractValue=visibleRows.reduce((s,x)=>s+Number(x.contractValue||0),0)
-  const filteredProgress=visibleRows.length?Math.round(visibleRows.reduce((sum,x)=>{
+  const filteredContractValue=rows.reduce((s,x)=>s+Number(x.contractValue||0),0)
+  const filteredProgress=rows.length?Math.round(rows.reduce((sum,x)=>{
     const milestones=x.executionMilestones||[]
     return sum+(milestones.length?milestones.reduce((mSum,m)=>mSum+Number(m.progressPct||0),0)/milestones.length:0)
-  },0)/visibleRows.length):0
+  },0)/rows.length):0
 
   return <div className="f-content">
     <PageHeader
@@ -120,8 +126,8 @@ export function ProjectsManager({role}:{role:string}){
     />
 
     <div className="f-grid-4">
-      <StatCard label="Projects" value={visibleRows.length} trend={rows.length===visibleRows.length?'Seluruh portfolio':'Hasil filter saat ini'} icon="▤"/>
-      <StatCard label="Active" value={visibleRows.filter(x=>x.status==='ACTIVE').length} trend="Lifecycle aktif" icon="↗"/>
+      <StatCard label="Projects" value={rows.length} trend={statusFilter==='ALL'&&clientFilter==='ALL'&& !q && !poNumber?'Seluruh portfolio':'Hasil filter saat ini'} icon="▤"/>
+      <StatCard label="Active" value={rows.filter(x=>x.status==='ACTIVE').length} trend="Lifecycle aktif" icon="↗"/>
       <StatCard label="Contract value" value={money(filteredContractValue)} trend="Nilai contract hasil filter" icon="Rp"/>
       <StatCard label="Avg. progress" value={filteredProgress+'%'} trend="Rata-rata execution progress" icon="◷"/>
     </div>
@@ -132,7 +138,7 @@ export function ProjectsManager({role}:{role:string}){
           <div className="f-project-search-title">
             <div>
               <strong>Project portfolio</strong>
-              <span>{visibleRows.length} dari {rows.length} project</span>
+              <span>{loading?'Memuat...':`${rows.length} project`}</span>
             </div>
           </div>
           <label className="f-project-search-box">
@@ -218,11 +224,11 @@ export function ProjectsManager({role}:{role:string}){
       <div className="f-card-head">
         <div><h3>Daftar project</h3><p>Project adalah unit kerja utama untuk execution, billing, payment, cost, profitability, dan documents.</p></div>
       </div>
-      {visibleRows.length?<div className="f-table-wrap">
+      {loading?<div className="f-empty">Memuat project…</div>:rows.length?<div className="f-table-wrap">
         <table className="f-table f-project-table">
           <thead><tr><th>Project</th><th>Client</th><th>No. PO Customer</th><th>Progress</th><th>Contract Value</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody>
-            {visibleRows.map(x=>{
+            {rows.map(x=>{
               const milestones=x.executionMilestones||[]
               const progress=milestones.length?Math.round(milestones.reduce((sum,m)=>sum+Number(m.progressPct||0),0)/milestones.length):0
               return <tr key={x.id}>
