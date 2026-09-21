@@ -791,3 +791,137 @@ body{
   .f-pagehead h1{font-size:23px!important}
   .f-stat{min-height:96px!important}
 }
+
+
+/* ---------- Projects enterprise search/filter workspace ---------------- */
+.f-project-search-card{overflow:hidden!important}
+.f-project-search-toolbar{
+  padding:16px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:12px!important;
+}
+.f-project-search-main{
+  display:grid!important;
+  grid-template-columns:minmax(180px,.6fr) minmax(320px,1.6fr) auto!important;
+  align-items:center!important;
+  gap:12px!important;
+}
+.f-project-search-title>div{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+}
+.f-project-search-title strong{font-size:12px!important;color:#233631!important}
+.f-project-search-title span{font-size:8px!important;color:#909994!important}
+.f-project-search-box{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.f-project-search-box>span{
+  position:absolute!important;
+  left:12px!important;
+  z-index:1!important;
+  color:#85908a!important;
+  font-size:15px!important;
+}
+.f-project-search-box .f-input{
+  width:100%!important;
+  padding-left:34px!important;
+}
+.f-project-quick-tabs{
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding-top:2px!important;
+}
+.f-project-quick-tabs button{
+  min-height:31px!important;
+  padding:6px 12px!important;
+  border:1px solid transparent!important;
+  border-radius:7px!important;
+  background:transparent!important;
+  color:#7a8580!important;
+  font-size:9px!important;
+  font-weight:650!important;
+  cursor:pointer!important;
+}
+.f-project-quick-tabs button:hover{
+  background:#f1f4ef!important;
+  color:#41514b!important;
+}
+.f-project-quick-tabs button.is-active{
+  background:#edf4f0!important;
+  border-color:#dce7e1!important;
+  color:#0d6159!important;
+}
+.f-project-filter-panel{
+  display:grid!important;
+  grid-template-columns:1.3fr 1fr 1fr auto!important;
+  gap:9px!important;
+  padding:14px 16px!important;
+  background:#f5f6f1!important;
+  border-top:1px solid var(--fe-line-soft)!important;
+  border-bottom:1px solid var(--fe-line-soft)!important;
+}
+.f-project-filter-panel label{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+}
+.f-project-filter-panel label>span{
+  color:#7f8984!important;
+  font-size:8px!important;
+  font-weight:700!important;
+  text-transform:uppercase!important;
+  letter-spacing:.05em!important;
+}
+.f-project-filter-actions{
+  display:flex!important;
+  align-items:flex-end!important;
+}
+.f-project-filter-chips{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+  padding:10px 16px 12px!important;
+  border-top:1px solid var(--fe-line-soft)!important;
+  background:#fbfcf8!important;
+}
+.f-project-filter-chips button{
+  min-height:26px!important;
+  padding:5px 9px!important;
+  border:1px solid #dce5df!important;
+  border-radius:999px!important;
+  background:#eef4f0!important;
+  color:#31645b!important;
+  font-size:8px!important;
+  cursor:pointer!important;
+}
+.f-project-table td:first-child{min-width:220px!important}
+.f-project-table td:nth-child(2){min-width:165px!important}
+.f-project-table td:nth-child(3){min-width:190px!important}
+.f-project-table td:nth-child(4){min-width:155px!important}
+.f-project-table-progress{min-width:130px!important}
+.f-project-table .f-progress{
+  overflow:hidden!important;
+  height:6px!important;
+  border-radius:999px!important;
+  background:#e6ebe6!important;
+}
+.f-project-table .f-progress span{
+  display:block!important;
+  height:100%!important;
+  border-radius:999px!important;
+  background:var(--fe-teal-2)!important;
+}
+@media(max-width:900px){
+  .f-project-search-main{grid-template-columns:1fr!important}
+  .f-project-filter-panel{grid-template-columns:1fr 1fr!important}
+}
+@media(max-width:560px){
+  .f-project-filter-panel{grid-template-columns:1fr!important}
+  .f-project-quick-tabs{overflow:auto!important;padding-bottom:2px!important}
+  .f-project-table{min-width:980px!important}
+}
