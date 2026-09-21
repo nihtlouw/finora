@@ -79,3 +79,46 @@ Detail: items, allocations, receipt, approval audit, payment and cashflow.
 - dates use Indonesian locale.
 - sensitive account/tax identifiers are masked.
 - statuses use both label and visual treatment.
+
+
+## List-first / drawer-first interaction standard
+
+Finora should prefer a list or workspace overview as the primary screen for operational modules. Create/edit actions must not permanently consume the main canvas when the user is primarily reviewing existing records.
+
+### Right drawer standard
+
+Use a right-side drawer for focused actions such as:
+- create project
+- create/edit customer
+- record expense
+- create invoice
+- add employee
+- add bank account
+- approve/settle a transaction
+
+The drawer must:
+- preserve the underlying list context,
+- be closable with an explicit close control, backdrop click, or Escape key,
+- provide a clear title and reason for the action,
+- show source context when the action originates from another business record,
+- keep the primary save/submit action in a stable footer,
+- explain important workflow preconditions before submission.
+
+### Project list standard
+
+The Project page is list-first. The default screen shows the project portfolio, search, filters, compact portfolio context, and links to Project Detail. The create form is not embedded in the main canvas; it opens as a right drawer.
+
+Project creation must remain workflow-aware:
+Customer PO VERIFIED + Proposal WON -> Create Project -> BOQ snapshot + Execution Foundation + Contract Version.
+
+The page should expose enough relationship context to answer quickly:
+- which customer owns the project,
+- which customer PO created it,
+- what quotation/proposal it came from,
+- contract value,
+- execution progress,
+- current lifecycle status.
+
+### Progressive disclosure
+
+Main screens should prioritize recognition and navigation. Related detail, configuration, evidence, and creation controls should appear only when the user opens the corresponding drawer or detail workspace. Avoid repeating the same large form and explanatory blocks on every page.
