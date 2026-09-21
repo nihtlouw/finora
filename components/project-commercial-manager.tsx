@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Badge, Card, PageHeader, money } from '@/components/finora-ui'
+import { Badge, Card, PageHeader, StatCard, money } from '@/components/finora-ui'
 import { SideDrawer } from '@/components/finora-side-drawer'
 
 type PO = { id:string; poNumber:string; poDate:string; receivedDate:string; status:string; totalAmount:any; taxAmount:any; grandTotal:any; overheadAmount?:any; roundingAmount?:any; roundedGrandTotal?:any; commercialVarianceAmount?:any; commercialVarianceReason?:string|null; reference?:string|null; remarks?:string|null; client:{id:string;name:string}; quotation?:{id:string;proposalNumber:string;projectName?:string|null;status:string}|null; project?:{id:string;projectCode:string;projectName:string;status:string}|null }
