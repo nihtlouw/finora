@@ -152,7 +152,6 @@ export default function CashflowManager({ role, initialRows }: { role: string; i
               <label>Referensi<input className="f-input" value={form.sourceRef} onChange={(e) => setForm({ ...form, sourceRef: e.target.value })} placeholder="Contoh: Modal owner / Pinjaman bank" /></label>
               
             </form></SideDrawer>}
-)}
     </div>
   )
 }
