@@ -25,6 +25,10 @@ Every visible column must map to:
 - a clearly labelled derived field,
 - or an explicit relation.
 
+## Project page
+
+Enterprise portfolio search must support free-text search across project code/name, client, location, customer PO number, proposal number and quotation reference. The primary project table displays customer PO number as a first-class business column when available. Advanced filters include status, client and customer PO number; subsequent releases may extend this with period and financial-state filters without changing the underlying project workflow.
+
 ## Employee page
 
 Header: Employees + active headcount + payroll-period context.
