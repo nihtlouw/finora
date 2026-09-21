@@ -14,7 +14,7 @@ function tone(s:string){return s==='VERIFIED'||s==='ACTIVE'||s==='COMPLETED'?'gr
 
 export function CustomerPOManager({role}:{role:string}){
   const params=useSearchParams(); const preselected=params.get('quotationId')||''
-  const [rows,setRows]=useState<PO[]>([]),[clients,setClients]=useState<Client[]>([]),[proposals,setProposals]=useState<Proposal[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
+  const [rows,setRows]=useState<PO[]>([]),[clients,setClients]=useState<Client[]>([]),[proposals,setProposals]=useState<Proposal[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[drawerOpen,setDrawerOpen]=useState(Boolean(preselected))
   const [form,setForm]=useState({clientId:'',quotationId:preselected,poNumber:'',poDate:new Date().toISOString().slice(0,10),receivedDate:new Date().toISOString().slice(0,10),reference:'',subtotalAmount:'',taxAmount:'0',overheadAmount:'0',roundingAmount:'0',dpPercent:'50',dpDueDays:'7',progressPercent:'45',progressTrigger:'FAT_AND_PRE_DELIVERY',retentionPercent:'5',retentionMonths:'2',commercialVarianceReason:'',remarks:''})
   const can=role==='OWNER'||role==='FINANCE'
   async function load(){const [a,b,c]=await Promise.all([fetch('/api/customer-pos'),fetch('/api/clients?type=CLIENT'),fetch('/api/proposals')]);const [ad,bd,cd]=await Promise.all([body(a),body(b),body(c)]);setRows(ad.customerPOs||[]);setClients(bd.clients||[]);setProposals((cd.proposals||[]).filter((x:Proposal)=>x.status==='WON'))}
@@ -23,16 +23,102 @@ export function CustomerPOManager({role}:{role:string}){
   useEffect(()=>{const p=proposals.find(x=>x.id===form.quotationId);if(p){setForm(f=>({...f,clientId:p.client.id,subtotalAmount:String(Number(p.subtotalAmount||0)),taxAmount:String(Number(p.taxAmount||0)),overheadAmount:String(Number(p.overheadAmount||0)),roundingAmount:String(Number(p.roundingAmount||0)),commercialVarianceReason:'',reference:p.quotationReference||f.reference}))}},[form.quotationId,proposals])
   function update(k:string,v:string){setForm(f=>({...f,[k]:v}))}
   async function save(e:React.FormEvent){e.preventDefault();setBusy(true);setMessage('');try{const r=await fetch('/api/customer-pos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,subtotalAmount:Number(form.subtotalAmount),taxAmount:Number(form.taxAmount),overheadAmount:Number(form.overheadAmount||0),roundingAmount:Number(form.roundingAmount||0),grandTotal:Number(form.subtotalAmount||0)+Number(form.taxAmount||0)+Number(form.overheadAmount||0)+Number(form.roundingAmount||0),paymentTermsSnapshot:{stages:[{name:'DP',percentage:Number(form.dpPercent||0),trigger:'PO_RELEASED',dueDays:Number(form.dpDueDays||0)},{name:'Progress',percentage:Number(form.progressPercent||0),trigger:form.progressTrigger},{name:'Retention',percentage:Number(form.retentionPercent||0),trigger:'RETENTION_END',retentionMonths:Number(form.retentionMonths||0)}]}})});const d=await body(r);if(!r.ok)throw new Error(d.error||'Gagal menyimpan PO.');setMessage('PO customer berhasil dicatat.');setForm(f=>({...f,poNumber:'',reference:'',subtotalAmount:'',taxAmount:'0',overheadAmount:'0',roundingAmount:'0',dpPercent:'50',dpDueDays:'7',progressPercent:'45',progressTrigger:'FAT_AND_PRE_DELIVERY',retentionPercent:'5',retentionMonths:'2',commercialVarianceReason:'',remarks:''}));await load()}catch(e){setMessage(e instanceof Error?e.message:'Gagal menyimpan PO.')}finally{setBusy(false)}}
+  function openCreate(){setMessage('');setDrawerOpen(true)}
+  function closeCreate(){if(!busy)setDrawerOpen(false)}
   async function setStatus(id:string,status:string){setBusy(true);setMessage('');try{const r=await fetch(`/api/customer-pos/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});const d=await body(r);if(!r.ok)throw new Error(d.error||'Gagal memperbarui PO.');setMessage(`PO menjadi ${status}.`);await load()}catch(e){setMessage(e instanceof Error?e.message:'Gagal.')}finally{setBusy(false)}}
   const selectedProposal = proposals.find(x=>x.id===form.quotationId)
   const formGrandTotal = (Number(form.subtotalAmount)||0)+(Number(form.taxAmount)||0)+(Number(form.overheadAmount)||0)+(Number(form.roundingAmount)||0)
   const quotationGrandTotal = Number(selectedProposal?.roundedTotalAmount ?? selectedProposal?.totalAmount ?? 0)
   const commercialVariance = formGrandTotal - quotationGrandTotal
   const hasVariance = Math.abs(commercialVariance) > 0.009
-  return <div className="f-content"><PageHeader eyebrow="COMMERCIAL / PURCHASE ORDER" title="PO Customer" description="Catat PO yang diterima dari customer dan hubungkan ke quotation yang sudah disetujui." action={message&&<span className="f-badge green">{message}</span>} />
+  return <div className="f-content"><PageHeader eyebrow="COMMERCIAL / PURCHASE ORDER" title="PO Customer" description="Kelola PO customer sebagai sumber order, payment terms, dan dasar pembentukan project." action={<>{message&&<span className="f-badge green">{message}</span>}{can&&<button className="f-btn primary" type="button" onClick={openCreate}>+ Catat PO</button>}</>} />
     <div className="f-grid-4"><StatCard label="Total PO" value={rows.length} icon="▤"/><StatCard label="Verified" value={rows.filter(x=>x.status==='VERIFIED').length} icon="✓"/><StatCard label="Belum diverifikasi" value={rows.filter(x=>x.status==='RECEIVED').length} icon="!"/><StatCard label="Nilai PO" value={money(rows.reduce((s,x)=>s+Number(x.grandTotal||0),0))} icon="Rp"/></div>
-    {can&&<Card className="f-section-gap"><div className="f-card-head"><div><h3>Catat PO customer</h3><p>Gunakan PO customer sebagai konfirmasi order sebelum project dibuat.</p></div></div><form className="f-form" onSubmit={save}><div className="f-form-grid"><label>Proposal WON<select className="f-input" value={form.quotationId} onChange={e=>update('quotationId',e.target.value)}><option value="">Pilih proposal WON</option>{proposals.map(p=><option key={p.id} value={p.id}>{p.proposalNumber} — {p.client.name}</option>)}</select></label><label>Klien<select className="f-input" value={form.clientId} onChange={e=>update('clientId',e.target.value)}><option value="">Pilih klien</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Nomor PO<input className="f-input" value={form.poNumber} onChange={e=>update('poNumber',e.target.value)} placeholder="PO-2026-001" /></label><label>Tanggal PO<input type="date" className="f-input" value={form.poDate} onChange={e=>update('poDate',e.target.value)} /></label><label>Diterima<input type="date" className="f-input" value={form.receivedDate} onChange={e=>update('receivedDate',e.target.value)} /></label><label>Reference<input className="f-input" value={form.reference} onChange={e=>update('reference',e.target.value)} placeholder="Nomor quotation customer" /></label><label>Subtotal PO<input className="f-input" inputMode="numeric" value={form.subtotalAmount} onChange={e=>update('subtotalAmount',e.target.value)} /></label><label>PPN PO<input className="f-input" inputMode="numeric" value={form.taxAmount} onChange={e=>update('taxAmount',e.target.value)} /></label><label>Overhead<input className="f-input" inputMode="numeric" value={form.overheadAmount} onChange={e=>update('overheadAmount',e.target.value)} /></label><label>Rounding adjustment<input className="f-input" inputMode="numeric" value={form.roundingAmount} onChange={e=>update('roundingAmount',e.target.value)} /></label><label>Grand total PO<input className="f-input" inputMode="numeric" value={String(formGrandTotal)} readOnly /></label><div className="f-inline-alert" style={{gridColumn:'1/-1'}}><strong>Payment terms terstruktur</strong></div><label>DP (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.dpPercent} onChange={e=>update('dpPercent',e.target.value)} /></label><label>DP due days<input className="f-input" type="number" min="0" value={form.dpDueDays} onChange={e=>update('dpDueDays',e.target.value)} /></label><label>Progress (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.progressPercent} onChange={e=>update('progressPercent',e.target.value)} /></label><label>Progress trigger<input className="f-input" value={form.progressTrigger} onChange={e=>update('progressTrigger',e.target.value)} /></label><label>Retention (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.retentionPercent} onChange={e=>update('retentionPercent',e.target.value)} /></label><label>Retention (bulan)<input className="f-input" type="number" min="0" value={form.retentionMonths} onChange={e=>update('retentionMonths',e.target.value)} /></label>{selectedProposal&&<div className="f-inline-alert" style={{gridColumn:'1/-1'}}><strong>Snapshot proposal:</strong> {money(Number(selectedProposal.subtotalAmount))} + {money(Number(selectedProposal.taxAmount))} = <strong>{money(Number(selectedProposal.roundedTotalAmount ?? selectedProposal.totalAmount))}</strong>. Nilai PO berbeda harus dijelaskan dan akan dicatat sebagai commercial variance.</div>}{hasVariance&&<label className="full">Alasan commercial variance <textarea className="f-input" rows={3} required value={form.commercialVarianceReason} onChange={e=>update('commercialVarianceReason',e.target.value)} placeholder="Contoh: Customer PO final berbeda karena scope disepakati ulang setelah negosiasi." /></label>}<label className="full">Catatan<textarea className="f-input" rows={3} value={form.remarks} onChange={e=>update('remarks',e.target.value)} /></label></div><div className="f-actions"><button className="f-btn primary" disabled={busy}>Simpan PO</button></div></form></Card>}
     <Card className="f-section-gap"><div className="f-card-head"><div><h3>Daftar PO customer</h3><p>PO menjadi sumber konfirmasi sebelum project dibuat.</p></div></div><div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>PO</th><th>Klien</th><th>Referensi</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td><strong>{x.poNumber}</strong></td><td>{x.client.name}</td><td>{x.quotation?.proposalNumber||x.reference||'—'}</td><td>{new Date(x.poDate).toLocaleDateString('id-ID')}</td><td className="f-number">{money(Number(x.grandTotal))}</td><td><Badge tone={tone(x.status)}>{x.status}</Badge></td><td><div className="f-actions">{x.status==='RECEIVED'&&can&&<><button className="f-btn soft" disabled={busy} onClick={()=>setStatus(x.id,'VERIFIED')}>Verifikasi</button><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'REJECTED')}>Tolak</button></>}{x.status==='VERIFIED'&&can&&!x.project&&<><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'CANCELLED')}>Batalkan</button><a className="f-btn primary" href={`/projects?customerPoId=${x.id}`}>Buat Project</a></>}{x.project&&<a className="f-btn soft" href={`/projects/${x.project.id}`}>Lihat Project</a>}</div></td></tr>)}</tbody></table></div>{!rows.length&&<div className="f-empty"><strong>Belum ada PO customer</strong>Catat PO dari proposal yang sudah WON.</div>}</Card>
+    <SideDrawer
+      open={drawerOpen}
+      onClose={closeCreate}
+      title="Catat PO customer"
+      description="Hubungkan PO customer ke proposal WON. Data commercial dan payment terms akan menjadi snapshot dasar workflow project."
+      footer={<div className="f-drawer-actions"><button className="f-btn" type="button" onClick={closeCreate} disabled={busy}>Cancel</button><button className="f-btn primary" form="create-customer-po-form" type="submit" disabled={busy}>{busy?'Saving…':'Simpan PO'}</button></div>}
+    >
+      <form id="create-customer-po-form" className="f-form" onSubmit={save}>
+        <label>Proposal WON
+          <select className="f-input" value={form.quotationId} onChange={e=>update('quotationId',e.target.value)} required>
+            <option value="">Pilih proposal WON</option>
+            {proposals.map(p=><option key={p.id} value={p.id}>{p.proposalNumber} — {p.client.name}</option>)}
+          </select>
+        </label>
+        <label>Klien
+          <select className="f-input" value={form.clientId} onChange={e=>update('clientId',e.target.value)} required>
+            <option value="">Pilih klien</option>
+            {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+        <div className="f-drawer-source">
+          <div><span>Proposal snapshot</span><strong>{selectedProposal?selectedProposal.proposalNumber:'Pilih proposal terlebih dahulu'}</strong></div>
+          <div><span>Customer</span><strong>{selectedProposal?.client.name||'—'}</strong></div>
+          <div><span>Quotation value</span><strong>{money(quotationGrandTotal)}</strong></div>
+          <div><span>PO draft total</span><strong>{money(formGrandTotal)}</strong></div>
+        </div>
+        <div className="f-form-grid">
+          <label>Nomor PO
+            <input className="f-input" value={form.poNumber} onChange={e=>update('poNumber',e.target.value)} placeholder="PO customer / nomor order" required />
+          </label>
+          <label>Tanggal PO
+            <input type="date" className="f-input" value={form.poDate} onChange={e=>update('poDate',e.target.value)} required />
+          </label>
+          <label>Diterima
+            <input type="date" className="f-input" value={form.receivedDate} onChange={e=>update('receivedDate',e.target.value)} required />
+          </label>
+          <label>Reference
+            <input className="f-input" value={form.reference} onChange={e=>update('reference',e.target.value)} placeholder="Nomor quotation / kontrak customer" />
+          </label>
+          <label>Subtotal PO
+            <input className="f-input" inputMode="numeric" value={form.subtotalAmount} onChange={e=>update('subtotalAmount',e.target.value)} required />
+          </label>
+          <label>PPN PO
+            <input className="f-input" inputMode="numeric" value={form.taxAmount} onChange={e=>update('taxAmount',e.target.value)} />
+          </label>
+          <label>Overhead
+            <input className="f-input" inputMode="numeric" value={form.overheadAmount} onChange={e=>update('overheadAmount',e.target.value)} />
+          </label>
+          <label>Rounding adjustment
+            <input className="f-input" inputMode="numeric" value={form.roundingAmount} onChange={e=>update('roundingAmount',e.target.value)} />
+          </label>
+          <label>Grand total PO
+            <input className="f-input" inputMode="numeric" value={String(formGrandTotal)} readOnly />
+          </label>
+        </div>
+        <div className="f-inline-alert"><strong>Payment terms terstruktur</strong><span>Atur tahap DP, progress, dan retention. Nilai persentase harus mencerminkan terms customer.</span></div>
+        <div className="f-form-grid">
+          <label>DP (%)
+            <input className="f-input" type="number" min="0" max="100" step="0.01" value={form.dpPercent} onChange={e=>update('dpPercent',e.target.value)} />
+          </label>
+          <label>DP due days
+            <input className="f-input" type="number" min="0" value={form.dpDueDays} onChange={e=>update('dpDueDays',e.target.value)} />
+          </label>
+          <label>Progress (%)
+            <input className="f-input" type="number" min="0" max="100" step="0.01" value={form.progressPercent} onChange={e=>update('progressPercent',e.target.value)} />
+          </label>
+          <label>Progress trigger
+            <input className="f-input" value={form.progressTrigger} onChange={e=>update('progressTrigger',e.target.value)} />
+          </label>
+          <label>Retention (%)
+            <input className="f-input" type="number" min="0" max="100" step="0.01" value={form.retentionPercent} onChange={e=>update('retentionPercent',e.target.value)} />
+          </label>
+          <label>Retention (bulan)
+            <input className="f-input" type="number" min="0" value={form.retentionMonths} onChange={e=>update('retentionMonths',e.target.value)} />
+          </label>
+        </div>
+        {selectedProposal&&<div className="f-inline-alert"><strong>Snapshot proposal:</strong> {money(Number(selectedProposal.subtotalAmount))} + {money(Number(selectedProposal.taxAmount))} = <strong>{money(Number(selectedProposal.roundedTotalAmount ?? selectedProposal.totalAmount))}</strong>. Nilai PO yang berbeda akan dicatat sebagai commercial variance.</div>}
+        {hasVariance&&<label>Alasan commercial variance
+          <textarea className="f-input" rows={4} required value={form.commercialVarianceReason} onChange={e=>update('commercialVarianceReason',e.target.value)} placeholder="Contoh: customer mengubah scope setelah negosiasi final." />
+        </label>}
+        <label>Catatan
+          <textarea className="f-input" rows={4} value={form.remarks} onChange={e=>update('remarks',e.target.value)} />
+        </label>
+      </form>
+    </SideDrawer>
   </div>
 }
 
