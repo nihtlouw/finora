@@ -2116,3 +2116,455 @@ body{
     flex-direction:column!important;
   }
 }
+
+
+/* ==========================================================================
+   Responsive complex workspaces
+   Complex forms are workspaces, not narrow drawers.
+   ========================================================================== */
+
+.f-drawer.f-full-workspace{
+  width:calc(100vw - var(--fe-sidebar-width))!important;
+  max-width:none!important;
+  min-width:0!important;
+  height:100dvh!important;
+  border-left:1px solid var(--fe-line)!important;
+  border-radius:0!important;
+}
+
+.f-drawer.f-full-workspace .f-drawer-head{
+  flex:0 0 auto!important;
+  padding:16px 24px 13px!important;
+}
+
+.f-drawer.f-full-workspace .f-drawer-head>div{
+  min-width:0!important;
+}
+
+.f-drawer.f-full-workspace .f-drawer-head h2{
+  font-size:22px!important;
+}
+
+.f-drawer.f-full-workspace .f-drawer-body{
+  padding:18px 24px 28px!important;
+  overflow:auto!important;
+  min-width:0!important;
+}
+
+.f-drawer.f-full-workspace .expense-entry-body{
+  width:min(1180px,100%)!important;
+  margin:0 auto!important;
+}
+
+.f-drawer.f-full-workspace .expense-form-section{
+  min-width:0!important;
+}
+
+.f-drawer.f-full-workspace .expense-context-grid{
+  grid-template-columns:minmax(0,2fr) repeat(3,minmax(150px,1fr))!important;
+}
+
+.f-drawer.f-full-workspace .expense-field-project{
+  min-width:0!important;
+}
+
+.f-drawer.f-full-workspace .expense-party-box{
+  grid-column:1/-1!important;
+}
+
+.f-drawer.f-full-workspace .expense-entry-note{
+  margin-bottom:8px!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal{
+  width:min(1180px,calc(100vw - var(--fe-sidebar-width) - 40px))!important;
+  max-width:none!important;
+  height:min(880px,calc(100dvh - 32px))!important;
+  max-height:calc(100dvh - 32px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  margin-left:var(--fe-sidebar-width)!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-header-form{
+  padding:0 20px!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-lines-head{
+  flex:0 0 auto!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-lines{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:auto!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-grid-head,
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-row{
+  min-width:0!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-row{
+  grid-template-columns:minmax(210px,1.5fr) repeat(4,minmax(110px,.75fr)) minmax(130px,1fr)!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-summary{
+  flex:0 0 auto!important;
+}
+
+.f-payroll-create-modal.f-full-workspace-modal .f-modal-actions{
+  flex:0 0 auto!important;
+  padding:12px 20px!important;
+  background:#fbfcf8!important;
+  border-top:1px solid var(--fe-line-soft)!important;
+}
+
+.f-payroll-drawer{
+  width:min(980px,calc(100vw - var(--fe-sidebar-width)))!important;
+  max-width:none!important;
+  height:100dvh!important;
+  border-radius:0!important;
+}
+
+.f-payroll-page .f-payroll-table{
+  min-width:0!important;
+}
+
+.f-payroll-page .f-payroll-table td,
+.f-payroll-page .f-payroll-table th{
+  white-space:nowrap!important;
+}
+
+.f-expense-page .f-expense-table{
+  min-width:0!important;
+}
+
+@media(max-width:780px){
+  .f-drawer.f-full-workspace{
+    width:100vw!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:100dvh!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-head{
+    padding:13px 14px 11px!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-head h2{
+    font-size:18px!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-head p{
+    max-width:none!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-body{
+    padding:12px 12px 20px!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-context-grid,
+  .f-drawer.f-full-workspace .expense-party-grid,
+  .f-drawer.f-full-workspace .expense-item-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-field-full,
+  .f-drawer.f-full-workspace .expense-party-box{
+    grid-column:auto!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-section-heading{
+    align-items:flex-start!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-section-heading-between{
+    gap:9px!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-items-footer{
+    flex-direction:column!important;
+    align-items:stretch!important;
+  }
+
+  .f-drawer.f-full-workspace .expense-grand-total{
+    width:100%!important;
+    justify-content:space-between!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-foot{
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1.35fr!important;
+    align-items:stretch!important;
+  }
+
+  .f-drawer.f-full-workspace .f-drawer-actions .f-btn{
+    width:100%!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    max-height:none!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-card-head{
+    padding:13px 14px!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-header-form{
+    grid-template-columns:1fr!important;
+    padding:0 14px!important;
+    gap:9px!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-grid-head{
+    display:none!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-row{
+    grid-template-columns:1fr 1fr!important;
+    gap:9px!important;
+    padding:12px!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-employee{
+    grid-column:1/-1!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-net{
+    grid-column:1/-1!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-summary{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:7px!important;
+    padding:10px 14px!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-modal-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1.25fr!important;
+    gap:8px!important;
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom))!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-modal-actions .f-btn{
+    width:100%!important;
+  }
+
+  .f-payroll-drawer{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  .f-payroll-page .f-payroll-table{
+    display:block!important;
+    width:100%!important;
+  }
+
+  .f-payroll-page .f-payroll-table thead{
+    display:none!important;
+  }
+
+  .f-payroll-page .f-payroll-table tbody{
+    display:grid!important;
+    gap:9px!important;
+    padding:10px!important;
+  }
+
+  .f-payroll-page .f-payroll-table tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    padding:10px 11px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:10px!important;
+    background:var(--fe-surface)!important;
+  }
+
+  .f-payroll-page .f-payroll-table td{
+    display:grid!important;
+    grid-template-columns:100px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:7px 0!important;
+    border:0!important;
+    white-space:normal!important;
+    background:transparent!important;
+  }
+
+  .f-payroll-page .f-payroll-table td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    text-transform:uppercase!important;
+    letter-spacing:.05em!important;
+  }
+
+  .f-payroll-page .f-payroll-table td:nth-child(1)::before{content:'Run';}
+  .f-payroll-page .f-payroll-table td:nth-child(2)::before{content:'Periode';}
+  .f-payroll-page .f-payroll-table td:nth-child(3)::before{content:'Karyawan';}
+  .f-payroll-page .f-payroll-table td:nth-child(6)::before{content:'Net';}
+  .f-payroll-page .f-payroll-table td:nth-child(7)::before{content:'Status';}
+  .f-payroll-page .f-payroll-table td:nth-child(9)::before{content:'Aksi';}
+  .f-payroll-page .f-payroll-table td:nth-child(4),
+  .f-payroll-page .f-payroll-table td:nth-child(5),
+  .f-payroll-page .f-payroll-table td:nth-child(8){
+    display:none!important;
+  }
+
+  .f-payroll-page .f-payroll-table td:nth-child(9){
+    display:block!important;
+    padding-top:9px!important;
+    margin-top:2px!important;
+    border-top:1px solid var(--fe-line-soft)!important;
+  }
+
+  .f-payroll-page .f-payroll-table td:nth-child(9)::before{
+    display:block!important;
+    margin-bottom:5px!important;
+  }
+
+  .f-payroll-page .f-payroll-table td:nth-child(9) .f-btn{
+    width:100%!important;
+  }
+
+  .f-expense-page .f-expense-table{
+    display:block!important;
+    width:100%!important;
+  }
+
+  .f-expense-page .f-expense-table thead{
+    display:none!important;
+  }
+
+  .f-expense-page .f-expense-table tbody{
+    display:grid!important;
+    gap:9px!important;
+    padding:10px!important;
+  }
+
+  .f-expense-page .f-expense-table tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    padding:10px 11px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:10px!important;
+    background:var(--fe-surface)!important;
+  }
+
+  .f-expense-page .f-expense-table td{
+    display:grid!important;
+    grid-template-columns:92px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:7px 0!important;
+    border:0!important;
+    white-space:normal!important;
+    background:transparent!important;
+  }
+
+  .f-expense-page .f-expense-table td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    text-transform:uppercase!important;
+    letter-spacing:.05em!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-expense-page .f-expense-table td:nth-child(2)::before{content:'Project';}
+  .f-expense-page .f-expense-table td:nth-child(4)::before{content:'Kategori';}
+  .f-expense-page .f-expense-table td:nth-child(5)::before{content:'Detail';}
+  .f-expense-page .f-expense-table td:nth-child(6)::before{content:'Total';}
+  .f-expense-page .f-expense-table td:nth-child(8)::before{content:'Approval';}
+  .f-expense-page .f-expense-table td:nth-child(9)::before{content:'Settlement';}
+  .f-expense-page .f-expense-table td:nth-child(3),
+  .f-expense-page .f-expense-table td:nth-child(7){
+    display:none!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(10){
+    display:block!important;
+    padding-top:9px!important;
+    margin-top:2px!important;
+    border-top:1px solid var(--fe-line-soft)!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(10)::before{
+    display:block!important;
+    margin-bottom:5px!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(10)>div{
+    display:flex!important;
+    gap:6px!important;
+    flex-wrap:wrap!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(10) .f-btn{
+    flex:1 1 120px!important;
+  }
+
+  .f-expense-page .f-expense-table td:nth-child(6){
+    font-size:13px!important;
+  }
+
+  .f-domain-drawer-body{
+    padding:12px!important;
+  }
+
+  .f-payroll-detail-kpis{
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+
+@media(max-width:520px){
+  .f-payroll-page .f-payroll-table tbody,
+  .f-expense-page .f-expense-table tbody{
+    padding:8px!important;
+  }
+
+  .f-payroll-page .f-payroll-table tr,
+  .f-expense-page .f-expense-table tr{
+    padding:9px!important;
+  }
+
+  .f-payroll-page .f-payroll-table td,
+  .f-expense-page .f-expense-table td{
+    grid-template-columns:82px minmax(0,1fr)!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-row{
+    grid-template-columns:1fr!important;
+  }
+
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-employee,
+  .f-payroll-create-modal.f-full-workspace-modal .f-payroll-draft-net{
+    grid-column:auto!important;
+  }
+
+  .f-payroll-page .f-payroll-table td:nth-child(10) .f-btn,
+  .f-expense-page .f-expense-table td:nth-child(10) .f-btn{
+    flex-basis:100%!important;
+  }
+}
+

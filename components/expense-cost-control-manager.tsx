@@ -301,7 +301,7 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
   }
 
   return (
-    <div className="f-content">
+    <div className="f-content f-expense-page">
       <PageHeader
         eyebrow="PROJECT COST CONTROL"
         title="Biaya Project"
@@ -334,7 +334,7 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
           </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table className="f-table">
+          <table className="f-table f-expense-table">
             <thead><tr><th>Tanggal</th><th>Project</th><th>Pihak</th><th>Kategori</th><th>Detail</th><th>Total</th><th>Bukti</th><th>Approval</th><th>Settlement</th><th>Aksi</th></tr></thead>
             <tbody>
               {filtered.map((expense) => (
@@ -373,7 +373,7 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
 
       {open && (
         <SideDrawer
-          className="expense-entry-workspace"
+          className="f-full-workspace expense-entry-workspace"
           open={open}
           onClose={() => !busy && setOpen(false)}
           title={editId ? 'Edit biaya project' : 'Catat pengeluaran'}

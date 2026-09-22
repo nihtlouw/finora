@@ -215,7 +215,7 @@ export default function PayrollManager({ role }: { role: string }) {
   }, { gross: 0, deductions: 0, net: 0 }), [draftLines])
 
   return (
-    <div className="f-content f-domain-page">
+    <div className="f-content f-domain-page f-payroll-page">
       <PageHeader
         eyebrow="FINANCE / PAYROLL"
         title="Payroll"
@@ -253,7 +253,7 @@ export default function PayrollManager({ role }: { role: string }) {
           <div className="f-empty"><strong>Belum ada payroll run</strong><span>Buat payroll run pertama menggunakan employee master.</span></div>
         ) : (
           <div className="f-table-wrap">
-            <table className="f-table f-domain-table">
+            <table className="f-table f-domain-table f-payroll-table">
               <thead><tr><th>Payroll Run</th><th>Period</th><th>Headcount</th><th>Gross</th><th>Deductions</th><th>Net</th><th>Status</th><th>Pay Date</th><th>Aksi</th></tr></thead>
               <tbody>
                 {filtered.map((row) => (
@@ -277,7 +277,7 @@ export default function PayrollManager({ role }: { role: string }) {
 
       {creating && (
         <div className="f-modal-backdrop" onMouseDown={() => setCreating(false)}>
-          <div className="f-modal-card f-domain-modal f-payroll-create-modal" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="f-modal-card f-domain-modal f-payroll-create-modal f-full-workspace-modal" onMouseDown={(e) => e.stopPropagation()}>
             <div className="f-card-head">
               <div><h3>Buat Payroll Run</h3><p>Payroll baru selalu dimulai sebagai DRAFT. Approval dan payment dilakukan setelah review.</p></div>
               <button className="f-btn" onClick={() => setCreating(false)}>Tutup</button>
