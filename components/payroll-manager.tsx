@@ -287,8 +287,11 @@ export default function PayrollManager({ role }: { role: string }) {
               <label>Periode<input className="f-input" type="month" value={period} onChange={(e) => setPeriod(e.target.value)} /></label>
               <label>Tanggal payroll<input className="f-input" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} /></label>
             </div>
-            <div className="f-card-head"><div><h3>Payroll lines</h3><p>{draftLines.length} employee aktif dari master.</p></div></div>
+            <div className="f-card-head f-payroll-lines-head"><div><h3>Payroll lines</h3><p>{draftLines.length} employee aktif dari master. Review seluruh baris sebelum menyimpan sebagai DRAFT.</p></div></div>
             <div className="f-payroll-draft-lines">
+              <div className="f-payroll-draft-grid-head" aria-hidden="true">
+                <span>Employee</span><span>Gross</span><span>PPh21</span><span>BPJS</span><span>Other</span><span>Net</span>
+              </div>
               {draftLines.map((line) => {
                 const employee = employees.find((item) => item.id === line.employeeId)
                 const deductions = n(line.pph21Amount) + n(line.bpjsAmount) + n(line.otherDeduction)
