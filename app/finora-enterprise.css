@@ -3042,3 +3042,133 @@ body{
   }
 }
 
+
+/* Additional mobile table maps for remaining operational/control pages. */
+.f-expense-table td,
+.f-audit-table td,
+.f-reconciliation-table td{
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+}
+
+@media(max-width:780px){
+  .f-expense-table,
+  .f-audit-table,
+  .f-reconciliation-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .f-expense-table thead,
+  .f-audit-table thead,
+  .f-reconciliation-table thead{
+    display:none!important;
+  }
+
+  .f-expense-table tbody,
+  .f-audit-table tbody,
+  .f-reconciliation-table tbody{
+    display:grid!important;
+    gap:9px!important;
+    padding:10px!important;
+  }
+
+  .f-expense-table tr,
+  .f-audit-table tr,
+  .f-reconciliation-table tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    padding:10px 11px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:10px!important;
+    background:var(--fe-surface)!important;
+  }
+
+  .f-expense-table td,
+  .f-audit-table td,
+  .f-reconciliation-table td{
+    display:grid!important;
+    grid-template-columns:94px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:7px 0!important;
+    border:0!important;
+    background:transparent!important;
+    white-space:normal!important;
+  }
+
+  .f-expense-table td::before,
+  .f-audit-table td::before,
+  .f-reconciliation-table td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    letter-spacing:.05em!important;
+    text-transform:uppercase!important;
+  }
+
+  .f-expense-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-expense-table td:nth-child(2)::before{content:'Kategori';}
+  .f-expense-table td:nth-child(3)::before{content:'Vendor';}
+  .f-expense-table td:nth-child(4)::before{content:'Nominal';}
+  .f-expense-table td:nth-child(5)::before{content:'Status';}
+  .f-expense-table td:nth-child(6)::before{content:'Aksi';}
+
+  .f-expense-table td:last-child,
+  .f-audit-table td:last-child,
+  .f-reconciliation-table td:last-child{
+    display:block!important;
+    padding-top:9px!important;
+    margin-top:2px!important;
+    border-top:1px solid var(--fe-line-soft)!important;
+  }
+
+  .f-expense-table td:last-child::before,
+  .f-audit-table td:last-child::before,
+  .f-reconciliation-table td:last-child::before{
+    display:block!important;
+    margin-bottom:5px!important;
+  }
+
+  .f-expense-table td:last-child>div,
+  .f-audit-table td:last-child>div{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    width:100%!important;
+  }
+
+  .f-expense-table td:last-child .f-btn,
+  .f-audit-table td:last-child .f-btn{
+    flex:1 1 120px!important;
+  }
+
+  .f-audit-table td:nth-child(1)::before{content:'Waktu';}
+  .f-audit-table td:nth-child(2)::before{content:'Actor';}
+  .f-audit-table td:nth-child(3)::before{content:'Aksi';}
+  .f-audit-table td:nth-child(4)::before{content:'Entitas';}
+  .f-audit-table td:nth-child(5)::before{content:'ID';}
+
+  .f-reconciliation-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-reconciliation-table td:nth-child(2)::before{content:'Jenis';}
+  .f-reconciliation-table td:nth-child(3)::before{content:'Referensi';}
+  .f-reconciliation-table td:nth-child(4)::before{content:'Expected';}
+  .f-reconciliation-table td:nth-child(5)::before{content:'Recorded';}
+  .f-reconciliation-table td:nth-child(6)::before{content:'Selisih';}
+  .f-reconciliation-table td:nth-child(7)::before{content:'Masalah';}
+}
+
+@media(max-width:520px){
+  .f-expense-table tbody,
+  .f-audit-table tbody,
+  .f-reconciliation-table tbody{
+    padding:8px!important;
+  }
+  .f-expense-table td,
+  .f-audit-table td,
+  .f-reconciliation-table td{
+    grid-template-columns:82px minmax(0,1fr)!important;
+  }
+}
+
