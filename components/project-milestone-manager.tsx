@@ -180,7 +180,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
           <span>Total {paymentTotal.toFixed(2)}% planned</span>
         </div>
         <div className="f-milestone-list">
-          {payment.map(x=><div key={x.id} className="f-milestone-row">
+          {payment.map(x=><div key={x.id} className="f-milestone-row project-milestone-row">
             <div className="f-milestone-row-main">
               <div className="f-milestone-row-title"><span className="f-milestone-number">#{x.sequence}</span><strong>{x.name}</strong></div>
               <div className="f-milestone-meta">
