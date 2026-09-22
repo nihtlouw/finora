@@ -68,7 +68,7 @@ export async function GET() {
   if (!c) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   const rows = await prisma.proposal.findMany({
     where: { client: { workspaceId: c.workspace.id } },
-    include: { client: true, items: { orderBy: { id: 'asc' } }, sections: { orderBy: { sortOrder: 'asc' }, include: { items: { orderBy: { id: 'asc' } } } }, invoice: true },
+    include: { client: true, items: { orderBy: { id: 'asc' } }, sections: { orderBy: { sortOrder: 'asc' }, include: { items: { orderBy: { id: 'asc' } } } }, invoice: true, customerPOs: { orderBy: { createdAt: 'desc' }, include: { project: { select: { id: true, projectCode: true, projectName: true, status: true } } } } },
     orderBy: { createdAt: 'desc' },
   })
   return NextResponse.json({ proposals: rows })
