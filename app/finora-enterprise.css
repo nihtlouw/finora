@@ -1926,3 +1926,78 @@ body{
     white-space:normal!important;
   }
 }
+
+
+/* Dashboard cash-flow period controls */
+.f-chart-toolbar{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  padding:8px 15px 0!important;
+}
+
+.f-chart-toolbar .f-chart-legend{
+  padding:0!important;
+  min-height:0!important;
+}
+
+.f-chart-periods{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:3px!important;
+  padding:3px!important;
+  border:1px solid #dce5e0!important;
+  border-radius:8px!important;
+  background:#f3f7f4!important;
+}
+
+.f-chart-periods button{
+  min-height:27px!important;
+  padding:0 9px!important;
+  border:0!important;
+  border-radius:6px!important;
+  background:transparent!important;
+  color:#72827b!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  cursor:pointer!important;
+  transition:background .12s ease,color .12s ease!important;
+}
+
+.f-chart-periods button:hover{
+  background:#e8f1ec!important;
+  color:#27564b!important;
+}
+
+.f-chart-periods button.is-active{
+  background:#fffefa!important;
+  color:#0d6659!important;
+  box-shadow:0 1px 4px rgba(21,58,49,.10)!important;
+}
+
+.f-chart-range-label{
+  padding:7px 17px 0!important;
+  color:#98a29e!important;
+  font-size:8px!important;
+}
+
+@media(max-width:780px){
+  .f-chart-toolbar{
+    align-items:flex-start!important;
+    flex-direction:column!important;
+  }
+
+  .f-chart-periods{
+    width:100%!important;
+    justify-content:space-between!important;
+  }
+
+  .f-chart-periods button{
+    flex:1 1 0!important;
+  }
+
+  .f-chart-range-label{
+    padding-top:6px!important;
+  }
+}
