@@ -251,7 +251,7 @@ export default function EmployeeManager({ role }: { role: string }) {
           <div className="f-empty"><strong>Tidak ada karyawan</strong><span>Sesuaikan filter atau buat employee baru.</span></div>
         ) : (
           <div className="f-table-wrap">
-            <table className="f-table f-domain-table">
+            <table className="f-table f-domain-table f-responsive-table f-employee-table">
               <thead>
                 <tr>
                   <th>Employee</th>
@@ -289,7 +289,7 @@ export default function EmployeeManager({ role }: { role: string }) {
 
       {editingId && (
         <div className="f-modal-backdrop" onMouseDown={() => { setEditingId(null); setForm(emptyForm) }}>
-          <div className="f-modal-card f-domain-modal" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="f-modal-card f-domain-modal employee-entry-modal" onMouseDown={(e) => e.stopPropagation()}>
             <div className="f-card-head">
               <div><h3>{editingId === 'NEW' ? 'Tambah Employee' : 'Edit Employee'}</h3><p>Master data ini menjadi sumber Payroll dan project allocation.</p></div>
               <button className="f-btn" onClick={() => { setEditingId(null); setForm(emptyForm) }}>Tutup</button>
@@ -319,7 +319,7 @@ export default function EmployeeManager({ role }: { role: string }) {
 
       {detail && (
         <div className="f-modal-backdrop" onMouseDown={() => setDetail(null)}>
-          <aside className="f-domain-drawer" onMouseDown={(e) => e.stopPropagation()}>
+          <aside className="f-domain-drawer f-employee-detail-drawer" onMouseDown={(e) => e.stopPropagation()}>
             <div className="f-domain-drawer-head">
               <div><div className="f-eyebrow">EMPLOYEE DETAIL</div><h2>{detail.name}</h2><p>{detail.employeeNo} · {detail.position || 'Position belum diisi'}</p></div>
               <button className="f-btn" onClick={() => setDetail(null)}>Tutup</button>
