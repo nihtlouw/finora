@@ -59,7 +59,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         taxAmount: commercial.taxAmount,
         totalAmount: commercial.totalAmount,
         termsAndConditions,
-        items: { create: items.map((x: any) => ({ description: requireText(x.description, 'Deskripsi item', 500), qty: Number(x.qty), unitPrice: positiveMoney(x.unitPrice, 'Harga satuan').decimal })) },
+        items: { create: items.map((x: any) => ({ description: requireText(x.description, 'Deskripsi item', 500), qty: Number(x.qty), unit: optionalText(x.unit, 40) || 'UNIT', unitPrice: positiveMoney(x.unitPrice, 'Harga satuan').decimal, category: String(x.category || 'SERVICE') })) },
       }, include: { client: true, items: true, payments: true } })
     })
     await writeAuditLog({ workspaceId: c.workspace.id, actorUserId: c.user.id, action: 'UPDATE', entityType: 'INVOICE', entityId: id, metadata: { invoiceNumber: invoice.invoiceNumber, total: invoice.totalAmount.toString() } })
