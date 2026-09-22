@@ -2568,3 +2568,477 @@ body{
   }
 }
 
+
+/* ==========================================================================
+   Global UI audit pass — complex overlays and mobile-first tables
+   ========================================================================== */
+
+/* Complex workflows live below the application top bar and do not cover the
+   fixed sidebar on desktop. On phones they consume the full content viewport. */
+.f-drawer-backdrop:has(.f-full-workspace){
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  padding:64px 0 0 var(--fe-sidebar-width)!important;
+  overflow:hidden!important;
+}
+
+.f-drawer.f-full-workspace{
+  width:calc(100vw - var(--fe-sidebar-width))!important;
+  height:calc(100dvh - 64px)!important;
+  max-height:none!important;
+  max-width:none!important;
+  border-left:1px solid var(--fe-line)!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+.f-modal-backdrop:has(.f-full-workspace-modal){
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  padding:64px 0 0 var(--fe-sidebar-width)!important;
+  overflow:hidden!important;
+}
+
+.f-modal-card.f-full-workspace-modal{
+  width:calc(100vw - var(--fe-sidebar-width))!important;
+  max-width:none!important;
+  height:calc(100dvh - 64px)!important;
+  max-height:none!important;
+  margin:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+.f-modal-card.f-proposal-create-modal .f-modal-body{
+  min-height:0!important;
+  overflow:auto!important;
+  background:#eef4f1!important;
+}
+
+.f-modal-card.f-proposal-create-modal .f-commercial-form{
+  width:min(1320px,100%)!important;
+  margin:0 auto!important;
+  padding:18px 22px 28px!important;
+}
+
+.f-modal-card.f-proposal-create-modal .f-modal-header{
+  background:#fbfdfc!important;
+}
+
+.f-modal-card.f-employee-create-modal{
+  display:flex!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  background:#f7f9f5!important;
+}
+
+.f-modal-card.f-employee-create-modal .f-domain-form-grid{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:auto!important;
+  align-content:start!important;
+  padding:18px 22px!important;
+}
+
+.f-modal-card.f-employee-create-modal .f-modal-actions{
+  flex:0 0 auto!important;
+  background:#fbfcf8!important;
+}
+
+.f-proposal-table td,
+.f-invoice-table td,
+.f-payment-table td,
+.f-budget-table td,
+.f-po-table td,
+.f-project-table td,
+.f-receivables-table td,
+.f-cashflow-table td,
+.f-project-expense-table td,
+.f-employee-table td,
+.f-control-table td{
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Keep dense desktop tables usable without allowing arbitrary content to
+   determine column width. */
+.f-proposal-table td:first-child,
+.f-invoice-table td:first-child,
+.f-payment-table td:first-child,
+.f-po-table td:first-child,
+.f-project-table td:first-child,
+.f-employee-table td:first-child{
+  min-width:150px!important;
+}
+
+/* --------------------------------------------------------------------------
+   Mobile table cards
+   -------------------------------------------------------------------------- */
+@media(max-width:780px){
+  .f-modal-backdrop:has(.f-full-workspace-modal),
+  .f-drawer-backdrop:has(.f-full-workspace){
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    padding:58px 0 0!important;
+    overflow:hidden!important;
+  }
+
+  .f-drawer.f-full-workspace{
+    width:100vw!important;
+    height:calc(100dvh - 58px)!important;
+    max-height:none!important;
+    border:0!important;
+  }
+
+  .f-modal-card.f-full-workspace-modal{
+    width:100vw!important;
+    height:calc(100dvh - 58px)!important;
+    max-height:none!important;
+    border:0!important;
+  }
+
+  .f-modal-card.f-proposal-create-modal .f-commercial-form{
+    padding:13px 12px 22px!important;
+  }
+
+  .f-modal-card.f-proposal-create-modal .f-form-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .f-modal-card.f-proposal-create-modal .f-form .full{
+    grid-column:auto!important;
+  }
+
+  .f-modal-card.f-employee-create-modal .f-domain-form-grid{
+    grid-template-columns:1fr!important;
+    padding:14px 12px!important;
+  }
+
+  .f-modal-card.f-employee-create-modal .f-domain-form-grid .f-domain-span-2{
+    grid-column:auto!important;
+  }
+
+  .f-modal-card.f-employee-create-modal .f-modal-actions{
+    display:grid!important;
+    grid-template-columns:1fr 1.25fr!important;
+    gap:8px!important;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;
+  }
+
+  .f-modal-card.f-employee-create-modal .f-modal-actions .f-btn{
+    width:100%!important;
+  }
+
+  /* Shared card grammar for dense data tables. */
+  .f-proposal-table,
+  .f-invoice-table,
+  .f-payment-table,
+  .f-budget-table,
+  .f-po-table,
+  .f-project-table,
+  .f-receivables-table,
+  .f-cashflow-table,
+  .f-project-expense-table,
+  .f-employee-table,
+  .f-control-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .f-proposal-table thead,
+  .f-invoice-table thead,
+  .f-payment-table thead,
+  .f-budget-table thead,
+  .f-po-table thead,
+  .f-project-table thead,
+  .f-receivables-table thead,
+  .f-cashflow-table thead,
+  .f-project-expense-table thead,
+  .f-employee-table thead,
+  .f-control-table thead{
+    display:none!important;
+  }
+
+  .f-proposal-table tbody,
+  .f-invoice-table tbody,
+  .f-payment-table tbody,
+  .f-budget-table tbody,
+  .f-po-table tbody,
+  .f-project-table tbody,
+  .f-receivables-table tbody,
+  .f-cashflow-table tbody,
+  .f-project-expense-table tbody,
+  .f-employee-table tbody,
+  .f-control-table tbody{
+    display:grid!important;
+    gap:9px!important;
+    padding:10px!important;
+  }
+
+  .f-proposal-table tr,
+  .f-invoice-table tr,
+  .f-payment-table tr,
+  .f-budget-table tr,
+  .f-po-table tr,
+  .f-project-table tr,
+  .f-receivables-table tr,
+  .f-cashflow-table tr,
+  .f-project-expense-table tr,
+  .f-employee-table tr,
+  .f-control-table tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    padding:10px 11px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:10px!important;
+    background:var(--fe-surface)!important;
+    box-shadow:none!important;
+  }
+
+  .f-proposal-table td,
+  .f-invoice-table td,
+  .f-payment-table td,
+  .f-budget-table td,
+  .f-po-table td,
+  .f-project-table td,
+  .f-receivables-table td,
+  .f-cashflow-table td,
+  .f-project-expense-table td,
+  .f-employee-table td,
+  .f-control-table td{
+    display:grid!important;
+    grid-template-columns:94px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:7px 0!important;
+    border:0!important;
+    background:transparent!important;
+    white-space:normal!important;
+  }
+
+  .f-proposal-table td::before,
+  .f-invoice-table td::before,
+  .f-payment-table td::before,
+  .f-budget-table td::before,
+  .f-po-table td::before,
+  .f-project-table td::before,
+  .f-receivables-table td::before,
+  .f-cashflow-table td::before,
+  .f-project-expense-table td::before,
+  .f-employee-table td::before,
+  .f-control-table td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    letter-spacing:.05em!important;
+    text-transform:uppercase!important;
+  }
+
+  .f-proposal-table td:nth-child(1)::before{content:'Proposal';}
+  .f-proposal-table td:nth-child(2)::before{content:'Project';}
+  .f-proposal-table td:nth-child(3)::before{content:'Klien';}
+  .f-proposal-table td:nth-child(4)::before{content:'Berlaku';}
+  .f-proposal-table td:nth-child(5)::before{content:'Nilai';}
+  .f-proposal-table td:nth-child(6)::before{content:'Status';}
+  .f-proposal-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-invoice-table td:nth-child(1)::before{content:'Invoice';}
+  .f-invoice-table td:nth-child(2)::before{content:'Project';}
+  .f-invoice-table td:nth-child(3)::before{content:'Klien';}
+  .f-invoice-table td:nth-child(4)::before{content:'Jatuh tempo';}
+  .f-invoice-table td:nth-child(5)::before{content:'Total';}
+  .f-invoice-table td:nth-child(6)::before{content:'Status';}
+  .f-invoice-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-payment-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-payment-table td:nth-child(2)::before{content:'Invoice';}
+  .f-payment-table td:nth-child(3)::before{content:'Project';}
+  .f-payment-table td:nth-child(4)::before{content:'Klien';}
+  .f-payment-table td:nth-child(5)::before{content:'Metode';}
+  .f-payment-table td:nth-child(6)::before{content:'Nominal';}
+  .f-payment-table td:nth-child(7)::before{content:'Status';}
+
+  .f-budget-table td:nth-child(1)::before{content:'Kategori';}
+  .f-budget-table td:nth-child(2)::before{content:'Periode';}
+  .f-budget-table td:nth-child(3)::before{content:'Rencana';}
+  .f-budget-table td:nth-child(4)::before{content:'Actual';}
+  .f-budget-table td:nth-child(5)::before{content:'Sisa';}
+  .f-budget-table td:nth-child(6)::before{content:'Status';}
+  .f-budget-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-po-table td:nth-child(1)::before{content:'PO';}
+  .f-po-table td:nth-child(2)::before{content:'Klien';}
+  .f-po-table td:nth-child(3)::before{content:'Referensi';}
+  .f-po-table td:nth-child(4)::before{content:'Tanggal';}
+  .f-po-table td:nth-child(5)::before{content:'Nilai';}
+  .f-po-table td:nth-child(6)::before{content:'Status';}
+  .f-po-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-project-table td:nth-child(1)::before{content:'Project';}
+  .f-project-table td:nth-child(2)::before{content:'Customer';}
+  .f-project-table td:nth-child(3)::before{content:'No. PO';}
+  .f-project-table td:nth-child(4)::before{content:'Progress';}
+  .f-project-table td:nth-child(5)::before{content:'Contract';}
+  .f-project-table td:nth-child(6)::before{content:'Status';}
+  .f-project-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-receivables-table td:nth-child(1)::before{content:'Invoice';}
+  .f-receivables-table td:nth-child(2)::before{content:'Klien';}
+  .f-receivables-table td:nth-child(3)::before{content:'Jatuh tempo';}
+  .f-receivables-table td:nth-child(4)::before{content:'Umur';}
+  .f-receivables-table td:nth-child(5)::before{content:'Total';}
+  .f-receivables-table td:nth-child(6)::before{content:'Outstanding';}
+  .f-receivables-table td:nth-child(7)::before{content:'Status';}
+  .f-receivables-table td:nth-child(8)::before{content:'Aksi';}
+
+  .f-cashflow-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-cashflow-table td:nth-child(2)::before{content:'Kategori';}
+  .f-cashflow-table td:nth-child(3)::before{content:'Sumber';}
+  .f-cashflow-table td:nth-child(4)::before{content:'Tipe';}
+  .f-cashflow-table td:nth-child(5)::before{content:'Nominal';}
+  .f-cashflow-table td:nth-child(6)::before{content:'Aksi';}
+
+  .f-project-expense-table td:nth-child(1)::before{content:'Tanggal';}
+  .f-project-expense-table td:nth-child(2)::before{content:'Kategori';}
+  .f-project-expense-table td:nth-child(3)::before{content:'Pihak';}
+  .f-project-expense-table td:nth-child(4)::before{content:'Status';}
+  .f-project-expense-table td:nth-child(5)::before{content:'Nominal';}
+  .f-project-expense-table td:nth-child(6)::before{content:'Aksi';}
+
+  .f-employee-table td:nth-child(1)::before{content:'Employee';}
+  .f-employee-table td:nth-child(2)::before{content:'Posisi';}
+  .f-employee-table td:nth-child(3)::before{content:'Status';}
+  .f-employee-table td:nth-child(4)::before{content:'Gaji';}
+  .f-employee-table td:nth-child(5)::before{content:'Bank';}
+  .f-employee-table td:nth-child(6)::before{content:'Payroll';}
+  .f-employee-table td:nth-child(7)::before{content:'Aksi';}
+
+  .f-control-table td:nth-child(1)::before{content:'Identitas';}
+  .f-control-table td:nth-child(2)::before{content:'Status';}
+  .f-control-table td:nth-child(3)::before{content:'Nilai';}
+  .f-control-table td:nth-child(4)::before{content:'Tanggal';}
+  .f-control-table td:nth-child(5)::before{content:'Aksi';}
+
+  .f-proposal-table td:last-child,
+  .f-invoice-table td:last-child,
+  .f-po-table td:last-child,
+  .f-project-table td:last-child,
+  .f-cashflow-table td:last-child,
+  .f-project-expense-table td:last-child,
+  .f-employee-table td:last-child,
+  .f-control-table td:last-child{
+    display:block!important;
+    padding-top:9px!important;
+    margin-top:2px!important;
+    border-top:1px solid var(--fe-line-soft)!important;
+  }
+
+  .f-proposal-table td:last-child::before,
+  .f-invoice-table td:last-child::before,
+  .f-po-table td:last-child::before,
+  .f-project-table td:last-child::before,
+  .f-cashflow-table td:last-child::before,
+  .f-project-expense-table td:last-child::before,
+  .f-employee-table td:last-child::before,
+  .f-control-table td:last-child::before{
+    display:block!important;
+    margin-bottom:5px!important;
+  }
+
+  .f-proposal-table td:last-child .f-actions,
+  .f-proposal-table td:last-child .f-proposal-action-stack,
+  .f-invoice-table td:last-child .f-invoice-action-group,
+  .f-po-table td:last-child .f-actions,
+  .f-project-table td:last-child .f-btn,
+  .f-cashflow-table td:last-child>div,
+  .f-project-expense-table td:last-child>div,
+  .f-employee-table td:last-child .f-row-actions,
+  .f-control-table td:last-child>div{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    width:100%!important;
+  }
+
+  .f-proposal-table td:last-child .f-btn,
+  .f-invoice-table td:last-child .f-btn,
+  .f-po-table td:last-child .f-btn,
+  .f-project-table td:last-child .f-btn,
+  .f-cashflow-table td:last-child .f-btn,
+  .f-project-expense-table td:last-child .f-btn,
+  .f-employee-table td:last-child .f-btn,
+  .f-control-table td:last-child .f-btn{
+    flex:1 1 120px!important;
+  }
+
+  .f-payment-table td:nth-child(4),
+  .f-payment-table td:nth-child(7),
+  .f-budget-table td:nth-child(4),
+  .f-budget-table td:nth-child(5),
+  .f-employee-table td:nth-child(5){
+    display:none!important;
+  }
+}
+
+@media(max-width:520px){
+  .f-proposal-table tbody,
+  .f-invoice-table tbody,
+  .f-payment-table tbody,
+  .f-budget-table tbody,
+  .f-po-table tbody,
+  .f-project-table tbody,
+  .f-receivables-table tbody,
+  .f-cashflow-table tbody,
+  .f-project-expense-table tbody,
+  .f-employee-table tbody,
+  .f-control-table tbody{
+    padding:8px!important;
+  }
+
+  .f-proposal-table tr,
+  .f-invoice-table tr,
+  .f-payment-table tr,
+  .f-budget-table tr,
+  .f-po-table tr,
+  .f-project-table tr,
+  .f-receivables-table tr,
+  .f-cashflow-table tr,
+  .f-project-expense-table tr,
+  .f-employee-table tr,
+  .f-control-table tr{
+    padding:9px!important;
+  }
+
+  .f-proposal-table td,
+  .f-invoice-table td,
+  .f-payment-table td,
+  .f-budget-table td,
+  .f-po-table td,
+  .f-project-table td,
+  .f-receivables-table td,
+  .f-cashflow-table td,
+  .f-project-expense-table td,
+  .f-employee-table td,
+  .f-control-table td{
+    grid-template-columns:82px minmax(0,1fr)!important;
+  }
+
+  .f-proposal-table td:last-child .f-btn,
+  .f-invoice-table td:last-child .f-btn,
+  .f-po-table td:last-child .f-btn,
+  .f-project-table td:last-child .f-btn,
+  .f-cashflow-table td:last-child .f-btn,
+  .f-project-expense-table td:last-child .f-btn,
+  .f-employee-table td:last-child .f-btn,
+  .f-control-table td:last-child .f-btn{
+    flex-basis:100%!important;
+  }
+
+  .f-payment-table td:nth-child(6){
+    font-size:13px!important;
+  }
+}
+
