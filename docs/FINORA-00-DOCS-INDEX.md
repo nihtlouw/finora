@@ -13,6 +13,7 @@ This folder is the controlled reference set for implementing Finora. Code change
 7. `FINORA-07-UAT-MASTER-MATRIX.md` — acceptance tests and definition of done.
 8. `FINORA-08-DATABASE-CHANGE-POLICY.md` — schema changes, UAT application, production safety.
 9. `FINORA-MASTER-PRD-ERD.md` — condensed master baseline and navigation.
+10. `FINORA-10-DOCUMENT-INTELLIGENCE-PRD.md` — Smart Scan, document intelligence, extraction, verification, and document-to-workflow contracts.
 
 ## Change rule
 

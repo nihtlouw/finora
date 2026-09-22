@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge, Card, StatCard, money } from '@/components/finora-ui'
+import { SideDrawer } from '@/components/finora-side-drawer'
 
 type Billing = {
   id: string; sequence: number; name: string; percentage: any; amount: any; plannedDate?: string|null; status: string; displayStatus?: string; notes?: string|null; readiness?: {ready:boolean;missing:string[]};
@@ -31,6 +32,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
   const [payment,setPayment]=useState<Payment[]>([])
   const [busy,setBusy]=useState(false)
   const [message,setMessage]=useState('')
+  const [drawer,setDrawer]=useState<null|'billing'|'payment'>(null)
   const [bForm,setBForm]=useState({name:'',percentage:'',plannedDate:'',notes:'',triggerCode:'',triggerDescription:'',executionMilestoneId:'',requiredDocumentCategory:''})
   const [pForm,setPForm]=useState({name:'',percentage:'',dueDate:'',billingMilestoneId:'',triggerCode:'',dueDays:'',retentionMonths:'',retentionPercent:'',conditionNotes:'',notes:''})
 
@@ -120,45 +122,11 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
           </div>
           <div className="f-milestone-head-side">
             <Badge tone={billingTotal>=99.99?'green':'amber'}>{remainingBilling.toFixed(2)}% tersisa</Badge>
-            <span>{money(contractValue)} nilai kontrak</span>
+            <span>{money(contractValue)} nilai kontrak</span><button className="f-btn soft" type="button" onClick={()=>setDrawer('billing')} disabled={!can}>+ Billing</button>
           </div>
         </div>
 
-        {can&&<form className="f-form f-milestone-form" onSubmit={e=>create('billing',e)}>
-          <div className="f-milestone-form-grid billing">
-            <label className="span-5">
-              <span>Nama milestone</span>
-              <input className="f-input" value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} placeholder="Contoh: DP / Progress 50% / Serah terima" />
-              <small>Gunakan nama yang mudah dikenali saat nanti membuat invoice.</small>
-            </label>
-            <label className="span-2">
-              <span>Persentase</span>
-              <div className="f-percent-input"><input className="f-input" type="number" min="0.01" max="100" step="0.01" value={bForm.percentage} onChange={e=>setBForm(f=>({...f,percentage:e.target.value}))} placeholder="30" /><em>%</em></div>
-              <small>Sisa: {remainingBilling.toFixed(2)}%</small>
-            </label>
-            <label className="span-2">
-              <span>Tanggal rencana</span>
-              <input className="f-input" type="date" value={bForm.plannedDate} onChange={e=>setBForm(f=>({...f,plannedDate:e.target.value}))} />
-              <small>Kapan tagihan direncanakan.</small>
-            </label>
-            <label className="span-3 f-readonly-field">
-              <span>Nilai otomatis</span>
-              <input className="f-input" readOnly value={previewB?money(previewB):'—'} />
-              <small>Kontrak × persentase.</small>
-            </label>
-            <label className="span-4"><span>Execution gate</span><select className="f-input" value={bForm.executionMilestoneId} onChange={e=>setBForm(f=>({...f,executionMilestoneId:e.target.value}))}><option value="">Tanpa execution gate</option>{execution.map(x=><option key={x.id} value={x.id}>{x.code} — {x.name}</option>)}</select></label>
-            <label className="span-4"><span>Required evidence</span><select className="f-input" value={bForm.requiredDocumentCategory} onChange={e=>setBForm(f=>({...f,requiredDocumentCategory:e.target.value}))}><option value="">Tanpa evidence gate</option><option>FAT</option><option>DELIVERY</option><option>PROGRESS</option><option>TESTING</option><option>SLO_NIDI</option><option>BAP_BAST</option><option>CLOSEOUT</option></select></label>
-            <label className="span-4"><span>Trigger code</span><input className="f-input" value={bForm.triggerCode} onChange={e=>setBForm(f=>({...f,triggerCode:e.target.value}))} placeholder="FAT_AND_PRE_DELIVERY" /></label>
-            <label className="span-12"><span>Trigger description</span><textarea className="f-input" rows={2} value={bForm.triggerDescription} onChange={e=>setBForm(f=>({...f,triggerDescription:e.target.value}))}/></label>
-            <label className="span-9">
-              <span>Catatan</span>
-              <textarea className="f-input" rows={2} value={bForm.notes} onChange={e=>setBForm(f=>({...f,notes:e.target.value}))} placeholder="Syarat tagihan, dokumen pendukung, atau milestone pekerjaan." />
-            </label>
-            <div className="f-milestone-form-actions span-3">
-              <button className="f-btn primary" disabled={busy||!bForm.name||!bForm.percentage}>Tambah billing</button>
-            </div>
-          </div>
-        </form>}
+        
 
         <div className="f-milestone-list-head">
           <div><strong>Billing schedule</strong><span>{billing.length} milestone</span></div>
@@ -197,11 +165,86 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
           </div>
           <div className="f-milestone-head-side">
             <Badge tone={paymentTotal>=99.99?'green':'amber'}>{remainingPayment.toFixed(2)}% tersisa</Badge>
-            <span>{money(contractValue)} nilai kontrak</span>
+            <span>{money(contractValue)} nilai kontrak</span><button className="f-btn soft" type="button" onClick={()=>setDrawer('payment')} disabled={!can}>+ Payment</button>
           </div>
         </div>
 
-        {can&&<form className="f-form f-milestone-form" onSubmit={e=>create('payment',e)}>
+        
+
+        <div className="f-milestone-list-head">
+          <div><strong>Payment schedule</strong><span>{payment.length} milestone</span></div>
+          <span>Total {paymentTotal.toFixed(2)}% planned</span>
+        </div>
+        <div className="f-milestone-list">
+          {payment.map(x=><div key={x.id} className="f-milestone-row">
+            <div className="f-milestone-row-main">
+              <div className="f-milestone-row-title"><span className="f-milestone-number">#{x.sequence}</span><strong>{x.name}</strong></div>
+              <div className="f-milestone-meta">
+                <span>{Number(x.percentage).toFixed(2)}%</span>
+                <span>{money(Number(x.amount))}</span>
+                {x.dueDate&&<span>Jatuh tempo {new Date(x.dueDate).toLocaleDateString('id-ID')}</span>}
+                {x.billingMilestone&&<span>Billing #{x.billingMilestone.sequence}: {x.billingMilestone.name}</span>}
+              </div>
+            </div>
+            <div className="f-milestone-row-actions">
+              <Badge tone={tone(x.displayStatus||x.status)}>{x.displayStatus||x.status}</Badge>
+              {x.actual&&<span className="f-muted">Collected {money(x.actual.paidAmount)} · Sisa {money(x.actual.outstandingAmount)}</span>}
+              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy} onClick={()=>setStatus('payment',x.id,'DUE')}>Jatuh tempo</button>}
+              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn" disabled={busy} onClick={()=>remove('payment',x.id)}>Hapus</button>}
+            </div>
+          </div>)}
+          {!payment.length&&<div className="f-empty f-milestone-empty"><strong>Belum ada payment milestone</strong><span>Tambahkan jadwal penerimaan kas untuk project ini.</span></div>}
+        </div>
+        <div className="f-milestone-footnote">Status <strong>PLANNED</strong> dapat ditandai <strong>DUE</strong>. Setelah invoice menerima pembayaran, status akan mengikuti actual collection: <strong>PARTIAL</strong>, <strong>PAID</strong>, atau <strong>OVERDUE</strong>.</div>
+      </Card>
+      {drawer==='billing'&&<SideDrawer
+        open
+        onClose={()=>!busy&&setDrawer(null)}
+        title="Tambah billing milestone"
+        description="Rencana penagihan dihitung dari contract value dan dapat diberi execution/evidence gate sebelum menjadi READY."
+        footer={<div className="f-drawer-actions"><button type="button" className="f-btn" onClick={()=>setDrawer(null)} disabled={busy}>Cancel</button><button className="f-btn primary" form="billing-milestone-drawer-form" disabled={busy||!bForm.name||!bForm.percentage}>{busy?'Saving…':'Tambah billing'}</button></div>}
+      ><form id="billing-milestone-drawer-form" className="f-form f-milestone-form" onSubmit={e=>create('billing',e)}>
+          <div className="f-milestone-form-grid billing">
+            <label className="span-5">
+              <span>Nama milestone</span>
+              <input className="f-input" value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} placeholder="Contoh: DP / Progress 50% / Serah terima" />
+              <small>Gunakan nama yang mudah dikenali saat nanti membuat invoice.</small>
+            </label>
+            <label className="span-2">
+              <span>Persentase</span>
+              <div className="f-percent-input"><input className="f-input" type="number" min="0.01" max="100" step="0.01" value={bForm.percentage} onChange={e=>setBForm(f=>({...f,percentage:e.target.value}))} placeholder="30" /><em>%</em></div>
+              <small>Sisa: {remainingBilling.toFixed(2)}%</small>
+            </label>
+            <label className="span-2">
+              <span>Tanggal rencana</span>
+              <input className="f-input" type="date" value={bForm.plannedDate} onChange={e=>setBForm(f=>({...f,plannedDate:e.target.value}))} />
+              <small>Kapan tagihan direncanakan.</small>
+            </label>
+            <label className="span-3 f-readonly-field">
+              <span>Nilai otomatis</span>
+              <input className="f-input" readOnly value={previewB?money(previewB):'—'} />
+              <small>Kontrak × persentase.</small>
+            </label>
+            <label className="span-4"><span>Execution gate</span><select className="f-input" value={bForm.executionMilestoneId} onChange={e=>setBForm(f=>({...f,executionMilestoneId:e.target.value}))}><option value="">Tanpa execution gate</option>{execution.map(x=><option key={x.id} value={x.id}>{x.code} — {x.name}</option>)}</select></label>
+            <label className="span-4"><span>Required evidence</span><select className="f-input" value={bForm.requiredDocumentCategory} onChange={e=>setBForm(f=>({...f,requiredDocumentCategory:e.target.value}))}><option value="">Tanpa evidence gate</option><option>FAT</option><option>DELIVERY</option><option>PROGRESS</option><option>TESTING</option><option>SLO_NIDI</option><option>BAP_BAST</option><option>CLOSEOUT</option></select></label>
+            <label className="span-4"><span>Trigger code</span><input className="f-input" value={bForm.triggerCode} onChange={e=>setBForm(f=>({...f,triggerCode:e.target.value}))} placeholder="FAT_AND_PRE_DELIVERY" /></label>
+            <label className="span-12"><span>Trigger description</span><textarea className="f-input" rows={2} value={bForm.triggerDescription} onChange={e=>setBForm(f=>({...f,triggerDescription:e.target.value}))}/></label>
+            <label className="span-9">
+              <span>Catatan</span>
+              <textarea className="f-input" rows={2} value={bForm.notes} onChange={e=>setBForm(f=>({...f,notes:e.target.value}))} placeholder="Syarat tagihan, dokumen pendukung, atau milestone pekerjaan." />
+            </label>
+            <div className="f-milestone-form-actions span-3">
+              <button className="f-btn primary" disabled={busy||!bForm.name||!bForm.percentage}>Tambah billing</button>
+            </div>
+          </div>
+        </form></SideDrawer>}
+      {drawer==='payment'&&<SideDrawer
+        open
+        onClose={()=>!busy&&setDrawer(null)}
+        title="Tambah payment milestone"
+        description="Rencana penerimaan kas dapat dihubungkan ke satu billing milestone agar invoice dan collection mudah ditelusuri."
+        footer={<div className="f-drawer-actions"><button type="button" className="f-btn" onClick={()=>setDrawer(null)} disabled={busy}>Cancel</button><button className="f-btn primary" form="payment-milestone-drawer-form" disabled={busy||!pForm.name||!pForm.percentage}>{busy?'Saving…':'Tambah payment'}</button></div>}
+      ><form id="payment-milestone-drawer-form" className="f-form f-milestone-form" onSubmit={e=>create('payment',e)}>
           <div className="f-milestone-form-grid payment">
             <label className="span-5">
               <span>Nama milestone</span>
@@ -243,34 +286,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
               <button className="f-btn primary" disabled={busy||!pForm.name||!pForm.percentage}>Tambah payment</button>
             </div>
           </div>
-        </form>}
-
-        <div className="f-milestone-list-head">
-          <div><strong>Payment schedule</strong><span>{payment.length} milestone</span></div>
-          <span>Total {paymentTotal.toFixed(2)}% planned</span>
-        </div>
-        <div className="f-milestone-list">
-          {payment.map(x=><div key={x.id} className="f-milestone-row">
-            <div className="f-milestone-row-main">
-              <div className="f-milestone-row-title"><span className="f-milestone-number">#{x.sequence}</span><strong>{x.name}</strong></div>
-              <div className="f-milestone-meta">
-                <span>{Number(x.percentage).toFixed(2)}%</span>
-                <span>{money(Number(x.amount))}</span>
-                {x.dueDate&&<span>Jatuh tempo {new Date(x.dueDate).toLocaleDateString('id-ID')}</span>}
-                {x.billingMilestone&&<span>Billing #{x.billingMilestone.sequence}: {x.billingMilestone.name}</span>}
-              </div>
-            </div>
-            <div className="f-milestone-row-actions">
-              <Badge tone={tone(x.displayStatus||x.status)}>{x.displayStatus||x.status}</Badge>
-              {x.actual&&<span className="f-muted">Collected {money(x.actual.paidAmount)} · Sisa {money(x.actual.outstandingAmount)}</span>}
-              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy} onClick={()=>setStatus('payment',x.id,'DUE')}>Jatuh tempo</button>}
-              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn" disabled={busy} onClick={()=>remove('payment',x.id)}>Hapus</button>}
-            </div>
-          </div>)}
-          {!payment.length&&<div className="f-empty f-milestone-empty"><strong>Belum ada payment milestone</strong><span>Tambahkan jadwal penerimaan kas untuk project ini.</span></div>}
-        </div>
-        <div className="f-milestone-footnote">Status <strong>PLANNED</strong> dapat ditandai <strong>DUE</strong>. Setelah invoice menerima pembayaran, status akan mengikuti actual collection: <strong>PARTIAL</strong>, <strong>PAID</strong>, atau <strong>OVERDUE</strong>.</div>
-      </Card>
+        </form></SideDrawer>}
     </div>
   </div>
 }

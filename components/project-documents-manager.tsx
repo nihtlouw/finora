@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { SideDrawer } from '@/components/finora-side-drawer'
 
 type ProjectDocument = {
   id: string
@@ -64,6 +65,7 @@ export default function ProjectDocumentsManager({ projectId, role }: Props) {
   const [tags, setTags] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [success, setSuccess] = useState('')
 
   const canWrite = ['OWNER', 'FINANCE'].includes(role)
@@ -122,6 +124,7 @@ export default function ProjectDocumentsManager({ projectId, role }: Props) {
 
       resetForm()
       await load()
+      setDrawerOpen(false)
       setSuccess('Dokumen berhasil diunggah. Versi terbaru sudah ditandai sebagai current.')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload gagal.')
@@ -156,118 +159,52 @@ export default function ProjectDocumentsManager({ projectId, role }: Props) {
         <div className="project-documents-counts">
           <span className="f-badge neutral">{docs.length} file</span>
           {currentCount > 0 && <span className="project-documents-current">{currentCount} current</span>}
+          {canWrite && <button className="f-btn primary" type="button" onClick={()=>{setError('');setSuccess('');setDrawerOpen(true)}}>+ Upload document</button>}
         </div>
       </div>
 
       {canWrite && (
-        <div className="project-documents-form-wrap">
-          <div className="project-documents-form-intro">
-            <div>
-              <strong>Upload evidence project</strong>
-              <span>Gunakan document key yang sama untuk membuat versi berikutnya.</span>
-            </div>
-            <div className="project-documents-hint">PDF, JPG, PNG, WEBP, XLSX, DOCX · max 10 MB</div>
-          </div>
-
+        <>
           {error && <div className="f-inline-alert error">{error}</div>}
           {success && <div className="f-inline-alert success">{success}</div>}
-
-          <div className="project-documents-form">
-            <label className="project-doc-field project-doc-field-wide">
-              <span>Judul dokumen <em>Wajib</em></span>
-              <input
-                className="f-input"
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Contoh: FAT Report Panel TM"
-              />
-              <small>Nama yang mudah dikenali oleh owner dan tim project.</small>
-            </label>
-
-            <label className="project-doc-field">
-              <span>Document key <em>Opsional</em></span>
-              <input
-                className="f-input"
-                value={documentKey}
-                onChange={(event) => setDocumentKey(event.target.value.toUpperCase())}
-                placeholder="FAT_REPORT"
-              />
-              <small>Identitas versioning. Contoh: FAT_REPORT atau BAP_01.</small>
-            </label>
-
-            <label className="project-doc-field">
-              <span>Kategori</span>
-              <select className="f-select" value={category} onChange={(event) => setCategory(event.target.value)}>
-                {CATEGORY_OPTIONS.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-              <small>Pilih sesuai jenis evidence.</small>
-            </label>
-
-            <label className="project-doc-field">
-              <span>Tanggal dokumen</span>
-              <input
-                type="date"
-                className="f-input"
-                value={documentDate}
-                onChange={(event) => setDocumentDate(event.target.value)}
-              />
-              <small>Isi tanggal yang tercantum pada dokumen.</small>
-            </label>
-
-            <label className="project-doc-field">
-              <span>Sumber</span>
-              <input
-                className="f-input"
-                value={source}
-                onChange={(event) => setSource(event.target.value)}
-                placeholder="Vendor / Site / Customer"
-              />
-              <small>Siapa atau dari mana evidence berasal.</small>
-            </label>
-
-            <label className="project-doc-field">
-              <span>Tags</span>
-              <input
-                className="f-input"
-                value={tags}
-                onChange={(event) => setTags(event.target.value)}
-                placeholder="FAT, panel TM, revision"
-              />
-              <small>Pisahkan tag dengan koma.</small>
-            </label>
-
-            <div className="project-doc-field project-doc-upload-field">
-              <span>File <em>Wajib</em></span>
-              <label className="project-doc-dropzone">
-                <input
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={(event) => {
-                    setFile(event.target.files?.[0] || null)
-                    setError('')
-                    setSuccess('')
-                  }}
-                />
-                <span className="project-doc-drop-icon">↑</span>
-                <span>
-                  <strong>{file ? file.name : 'Pilih file evidence'}</strong>
-                  <small>{file ? formatBytes(file.size) : 'Klik untuk memilih file dari komputer'}</small>
-                </span>
+          <SideDrawer
+            open={drawerOpen}
+            onClose={() => !busy && setDrawerOpen(false)}
+            title="Upload project document"
+            description="Evidence tersimpan dengan category, document key, dan versioning. Smart Scan akan menjadi layer berikutnya di atas fondasi ini."
+            footer={<div className="f-drawer-actions"><button type="button" className="f-btn" onClick={resetForm} disabled={busy}>Bersihkan</button><button type="button" className="f-btn primary" disabled={!canSubmit} onClick={upload}>{busy ? 'Mengunggah…' : file ? 'Upload document' : 'Pilih file dahulu'}</button></div>}
+          >
+            <div className="f-form">
+              <label>Judul dokumen
+                <input className="f-input" value={title} onChange={event=>setTitle(event.target.value)} placeholder="Contoh: FAT Report Panel TM" />
+                <small>Nama yang mudah dikenali owner dan tim project.</small>
               </label>
+              <label>Document key
+                <input className="f-input" value={documentKey} onChange={event=>setDocumentKey(event.target.value.toUpperCase())} placeholder="FAT_REPORT / BAP_01" />
+                <small>Gunakan key yang sama untuk membuat versi berikutnya.</small>
+              </label>
+              <label>Kategori
+                <select className="f-select" value={category} onChange={event=>setCategory(event.target.value)}>
+                  {CATEGORY_OPTIONS.map(([value,label])=><option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label>Tanggal dokumen
+                <input className="f-input" type="date" value={documentDate} onChange={event=>setDocumentDate(event.target.value)} />
+              </label>
+              <label>Sumber
+                <input className="f-input" value={source} onChange={event=>setSource(event.target.value)} placeholder="Vendor / Site / Customer" />
+              </label>
+              <label>Tags
+                <input className="f-input" value={tags} onChange={event=>setTags(event.target.value)} placeholder="FAT, panel TM, revision" />
+              </label>
+              <label>File
+                <input className="f-input" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event=>{setFile(event.target.files?.[0]||null);setError('');setSuccess('')}} />
+                <small>{file ? file.name+' · '+formatBytes(file.size) : 'PDF / JPG / PNG / WEBP / XLSX / DOCX · max 10 MB'}</small>
+              </label>
+              <div className="f-inline-alert info">Dokumen sumber tetap menjadi evidence. Tahap Smart Scan akan menambahkan extraction, confidence, verification, dan hubungan ke business entity tanpa menghapus file asli.</div>
             </div>
-
-            <div className="project-doc-actions">
-              <button className="f-btn" type="button" onClick={resetForm} disabled={busy}>
-                Bersihkan
-              </button>
-              <button className="f-btn primary" type="button" disabled={!canSubmit} onClick={upload}>
-                {busy ? 'Mengunggah…' : file ? 'Upload document' : 'Pilih file dahulu'}
-              </button>
-            </div>
-          </div>
-        </div>
+          </SideDrawer>
+        </>
       )}
 
       {!canWrite && (

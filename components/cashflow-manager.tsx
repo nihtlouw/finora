@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge, Card, PageHeader, StatCard, money } from '@/components/finora-ui'
+import { SideDrawer } from '@/components/finora-side-drawer'
 import ExpenseDetailPanel from '@/components/expense-detail-panel'
 
 type Row = {
@@ -137,21 +138,20 @@ export default function CashflowManager({ role, initialRows }: { role: string; i
 
       {selectedExpenseId && <ExpenseDetailPanel expenseId={selectedExpenseId} onClose={() => setSelectedExpenseId(null)} />}
 
-      {open && (
-        <div className="f-modal-backdrop" role="presentation">
-          <div className="f-card" style={{ width: 'min(520px,100%)', maxHeight: '90vh', overflow: 'auto' }}>
-            <div className="f-card-head"><div><h3>{editId?'Edit Transaksi Kas':'Transaksi Kas Manual'}</h3><p>Gunakan untuk modal, pinjaman, penyesuaian kas, dan transaksi non-invoice.</p></div><button className="f-btn" onClick={() => setOpen(false)}>Tutup</button></div>
-            <form className="f-form" onSubmit={submit}>
+      {open&&<SideDrawer
+        open
+        onClose={()=>!saving&&setOpen(false)}
+        title={editId?'Edit transaksi kas':'Transaksi kas manual'}
+        description="Gunakan untuk transaksi non-invoice seperti modal, pinjaman, penyesuaian kas, atau transaksi lain yang memang tidak berasal dari Payment/Expense."
+        footer={<div className="f-drawer-actions"><button type="button" className="f-btn" onClick={()=>setOpen(false)} disabled={saving}>Tutup</button><button className="f-btn primary" form="cashflow-manual-form" disabled={saving}>{saving?'Menyimpan...':'Simpan transaksi'}</button></div>}
+      ><form id="cashflow-manual-form" className="f-form" onSubmit={submit}>
               <label>Jenis<select className="f-select" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}><option value="INCOME">Pemasukan</option><option value="EXPENSE">Pengeluaran</option></select></label>
               <label>Kategori<input className="f-input" required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></label>
               <label>Nominal<input className="f-input" required min="1" type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></label>
               <label>Tanggal<input className="f-input" required type="date" value={form.transactionDate} onChange={(e) => setForm({ ...form, transactionDate: e.target.value })} /></label>
               <label>Referensi<input className="f-input" value={form.sourceRef} onChange={(e) => setForm({ ...form, sourceRef: e.target.value })} placeholder="Contoh: Modal owner / Pinjaman bank" /></label>
-              <button className="f-btn primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan transaksi'}</button>
-            </form>
-          </div>
-        </div>
-      )}
+              
+            </form></SideDrawer>}
     </div>
   )
 }
