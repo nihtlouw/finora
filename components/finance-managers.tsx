@@ -352,7 +352,7 @@ export function InvoicesManager({role}:{role:string}){
            <div className="invoice-field-grid invoice-commercial-grid">
              <label>Diskon (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.discountPercent} onChange={e=>setForm({...form,discountPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label>
              <label>Pajak (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.taxPercent} onChange={e=>setForm({...form,taxPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label>
-             <label className="invoice-terms-field">Terms &amp; Conditions<textarea className="f-textarea" rows={4} value={form.termsAndConditions} onChange={e=>setForm({...form,termsAndConditions:e.target.value})} placeholder="Contoh: pembayaran 14 hari setelah invoice diterima."/></textarea></label>
+             <label className="invoice-terms-field">Terms &amp; Conditions<textarea className="f-textarea" rows={4} value={form.termsAndConditions} onChange={e=>setForm({...form,termsAndConditions:e.target.value})} placeholder="Contoh: pembayaran 14 hari setelah invoice diterima." /></label>
            </div>
          </section>
 
