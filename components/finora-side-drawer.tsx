@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export function SideDrawer({open,onClose,title,description,children,footer}:{open:boolean;onClose:()=>void;title:string;description?:string;children:React.ReactNode;footer?:React.ReactNode;className?:string}){
+export function SideDrawer({open,onClose,title,description,children,footer,className}:{open:boolean;onClose:()=>void;title:string;description?:string;children:React.ReactNode;footer?:React.ReactNode;className?:string}){
  useEffect(()=>{
    if(!open)return
    const onKeyDown=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose()}
