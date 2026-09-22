@@ -3280,3 +3280,109 @@ body{
   .f-enterprise-table td:nth-child(4)::before{content:'Tanggal / Periode'}
   .f-enterprise-table td:nth-child(5)::before{content:'Aksi'}
 }
+
+
+/* Final mobile pass for nested/read-only tables and medium drawers. */
+@media(min-width:781px){
+  :root{
+    --fe-sidebar-width:224px;
+  }
+}
+
+@media(max-width:780px){
+  .f-project-create-drawer,
+  .f-project-document-drawer{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  .project-expense-table td:nth-child(1)::before{content:'Tanggal'}
+  .project-expense-table td:nth-child(2)::before{content:'Kategori'}
+  .project-expense-table td:nth-child(3)::before{content:'Pihak'}
+  .project-expense-table td:nth-child(4)::before{content:'Status'}
+  .project-expense-table td:nth-child(5)::before{content:'Nominal'}
+  .project-expense-table td:nth-child(6)::before{content:'Aksi'}
+
+  .f-payroll-drawer .f-table,
+  .f-employee-detail-drawer .f-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .f-payroll-drawer .f-table thead,
+  .f-employee-detail-drawer .f-table thead{
+    display:none!important;
+  }
+  .f-payroll-drawer .f-table tbody,
+  .f-employee-detail-drawer .f-table tbody{
+    display:grid!important;
+    gap:8px!important;
+    padding:8px!important;
+  }
+  .f-payroll-drawer .f-table tbody tr,
+  .f-employee-detail-drawer .f-table tbody tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    padding:9px 10px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:9px!important;
+    background:var(--fe-surface)!important;
+  }
+  .f-payroll-drawer .f-table td,
+  .f-employee-detail-drawer .f-table td{
+    display:grid!important;
+    grid-template-columns:92px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:start!important;
+    min-width:0!important;
+    padding:6px 0!important;
+    border:0!important;
+    background:transparent!important;
+    white-space:normal!important;
+  }
+  .f-payroll-drawer .f-table td::before,
+  .f-employee-detail-drawer .f-table td::before{
+    color:#7b8782!important;
+    font-size:8px!important;
+    font-weight:800!important;
+    text-transform:uppercase!important;
+    letter-spacing:.05em!important;
+  }
+
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(1)::before{content:'Employee'}
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(2)::before{content:'Gross'}
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(3)::before{content:'PPh21'}
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(4)::before{content:'BPJS'}
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(5)::before{content:'Other'}
+  .f-payroll-drawer .f-table:nth-of-type(1) td:nth-child(6)::before{content:'Net'}
+
+  .f-payroll-drawer .f-table:nth-of-type(2) td:nth-child(1)::before{content:'Employee'}
+  .f-payroll-drawer .f-table:nth-of-type(2) td:nth-child(2)::before{content:'Project'}
+  .f-payroll-drawer .f-table:nth-of-type(2) td:nth-child(3)::before{content:'Allocation'}
+  .f-payroll-drawer .f-table:nth-of-type(2) td:nth-child(4)::before{content:'Cost'}
+
+  .f-employee-detail-drawer .f-table:nth-of-type(1) td:nth-child(1)::before{content:'Payroll'}
+  .f-employee-detail-drawer .f-table:nth-of-type(1) td:nth-child(2)::before{content:'Status'}
+  .f-employee-detail-drawer .f-table:nth-of-type(1) td:nth-child(3)::before{content:'Gross'}
+  .f-employee-detail-drawer .f-table:nth-of-type(1) td:nth-child(4)::before{content:'Deduction'}
+  .f-employee-detail-drawer .f-table:nth-of-type(1) td:nth-child(5)::before{content:'Net'}
+
+  .f-employee-detail-drawer .f-table:nth-of-type(2) td:nth-child(1)::before{content:'Payroll'}
+  .f-employee-detail-drawer .f-table:nth-of-type(2) td:nth-child(2)::before{content:'Project'}
+  .f-employee-detail-drawer .f-table:nth-of-type(2) td:nth-child(3)::before{content:'%'}
+  .f-employee-detail-drawer .f-table:nth-of-type(2) td:nth-child(4)::before{content:'Amount'}
+  .f-employee-detail-drawer .f-table:nth-of-type(2) td:nth-child(5)::before{content:'Status'}
+
+  .f-payroll-drawer .f-table td:last-child,
+  .f-employee-detail-drawer .f-table td:last-child{
+    border-top:0!important;
+  }
+
+  .f-employee-detail-drawer .f-domain-detail-grid{
+    grid-template-columns:1fr!important;
+  }
+}
