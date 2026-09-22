@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export function SideDrawer({open,onClose,title,description,children,footer}:{open:boolean;onClose:()=>void;title:string;description?:string;children:React.ReactNode;footer?:React.ReactNode}){
+export function SideDrawer({open,onClose,title,description,children,footer,className}:{open:boolean;onClose:()=>void;title:string;description?:string;children:React.ReactNode;footer?:React.ReactNode;className?:string}){
  useEffect(()=>{
    if(!open)return
    const onKeyDown=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose()}
@@ -13,7 +13,7 @@ export function SideDrawer({open,onClose,title,description,children,footer}:{ope
  },[open,onClose])
  if(!open)return null
  return <div className="f-drawer-backdrop" role="presentation" onMouseDown={e=>{if(e.currentTarget===e.target)onClose()}}>
-   <aside className="f-drawer" role="dialog" aria-modal="true" aria-label={title}>
+   <aside className={`f-drawer${className ? ` ${className}` : ""}`} role="dialog" aria-modal="true" aria-label={title}>
      <div className="f-drawer-head">
        <div><div className="f-eyebrow">Workspace action</div><h2>{title}</h2>{description&&<p>{description}</p>}</div>
        <button type="button" className="f-icon" onClick={onClose} aria-label="Tutup">×</button>

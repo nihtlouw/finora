@@ -373,6 +373,7 @@ export default function ExpenseCostControlManager({ role }: { role: string }) {
 
       {open && (
         <SideDrawer
+          className="expense-entry-workspace"
           open={open}
           onClose={() => !busy && setOpen(false)}
           title={editId ? 'Edit biaya project' : 'Catat pengeluaran'}
