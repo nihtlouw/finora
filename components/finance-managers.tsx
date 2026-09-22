@@ -55,7 +55,6 @@ export function ProposalsManager({role}:{role:string}){
   <Card><div className="f-toolbar"><input className="f-input" placeholder="Cari nomor, klien, atau project..." value={q} onChange={e=>setQ(e.target.value)}/>{message&&<span className="f-badge green">{message}</span>}</div><div style={{overflowX:'auto'}}><table className="f-table f-responsive-table f-proposal-table"><thead><tr><th>Proposal</th><th>Project</th><th>Klien</th><th>Valid sampai</th><th>Nilai</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{filtered.map(x=>{
    const activePO=x.customerPOs?.find(po=>po.status==='RECEIVED'||po.status==='VERIFIED')
    const project=activePO?.project||null
-   const handoverStep=x.status!=='WON'?0:project?4:activePO?.status==='VERIFIED'?3:activePO?.status==='RECEIVED'?2:1
    return <tr key={x.id}>
      <td><strong>{x.proposalNumber}</strong>{(x as any).quotationReference&&<div className="f-muted" style={{fontSize:11}}>Ref {(x as any).quotationReference}</div>}</td>
      <td>{(x as any).projectName||'-'}</td>
@@ -75,20 +74,12 @@ export function ProposalsManager({role}:{role:string}){
            <a className="f-btn" href={'/documents/proposals/'+x.id} target="_blank" rel="noreferrer">PDF / Cetak</a>
            {x.invoice?<a className="f-btn soft" href="/invoices">Lihat invoice</a>:<>{canWrite(role)&&x.status==='DRAFT'&&<><button className="f-btn soft" disabled={busy} onClick={()=>startEdit(x)}>Edit</button><button className="f-btn" disabled={busy} onClick={()=>remove(x.id)}>Hapus</button><button className="f-btn soft" disabled={busy} onClick={()=>action(x.id,{status:'SENT'},'Proposal dikirim.')}>Kirim</button></>}{canFinance(role)&&x.status==='SENT'&&<><button className="f-btn" disabled={busy} onClick={()=>action(x.id,{status:'NEGOTIATION'},'Proposal masuk NEGOTIATION.')}>Negosiasi</button><button className="f-btn soft" disabled={busy} onClick={()=>action(x.id,{status:'WON'},'Proposal dimenangkan.')}>Menangkan</button><button className="f-btn" disabled={busy} onClick={()=>action(x.id,{status:'LOST'},'Proposal ditetapkan LOST.')}>Tolak / LOST</button></>}</>}
          </div>
-         {x.status==='WON'&&<div className="f-commercial-handover">
-           <div className="f-commercial-handover-head"><strong>Commercial handover</strong><span>{project?'Project siap':activePO?.status==='VERIFIED'?'Siap buat project':activePO?.status==='RECEIVED'?'Menunggu verifikasi':'Belum ada PO'}</span></div>
-           <div className="f-commercial-handover-steps">
-             <span className={handoverStep>=1?'done':''}>1. WON</span>
-             <span className={handoverStep>=2?'done':''}>2. PO</span>
-             <span className={handoverStep>=3?'done':''}>3. Verify</span>
-             <span className={handoverStep>=4?'done':''}>4. Project</span>
-           </div>
-           <div className="f-commercial-handover-action">
-             {!activePO&&<a className="f-btn primary" href={'/customer-pos?quotationId='+x.id}>Catat PO</a>}
-             {activePO?.status==='RECEIVED'&&<a className="f-btn primary" href="/customer-pos">Verifikasi PO</a>}
-             {activePO?.status==='VERIFIED'&&!project&&<a className="f-btn primary" href={'/projects?customerPoId='+activePO.id}>Buat Project</a>}
-             {project&&<a className="f-btn soft" href={'/projects/'+project.id}>Buka Project</a>}
-           </div>
+         {x.status==='WON'&&<div className="f-proposal-next-step">
+           <span className="f-status-sub">{project ? 'Project sudah terbentuk' : activePO?.status==='VERIFIED' ? 'Finance check selesai · siap buat Project' : activePO?.status==='RECEIVED' ? 'PO tercatat · menunggu Finance check' : 'Menunggu Customer PO'}</span>
+           {!activePO&&<a className="f-btn primary" href={'/customer-pos?quotationId='+x.id}>Catat PO</a>}
+           {activePO?.status==='RECEIVED'&&<a className="f-btn primary" href="/customer-pos">Finance check</a>}
+           {activePO?.status==='VERIFIED'&&!project&&<a className="f-btn primary" href={'/projects?customerPoId='+activePO.id}>Buat Project</a>}
+           {project&&<a className="f-btn soft" href={'/projects/'+project.id}>Buka Project</a>}
          </div>}
        </div>
      </td>
