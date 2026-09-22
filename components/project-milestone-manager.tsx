@@ -133,26 +133,30 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
           <span>Total {billingTotal.toFixed(2)}% planned</span>
         </div>
         <div className="f-milestone-list">
-          {billing.map(x=><div key={x.id} className="f-milestone-row">
+          {billing.map(x=><div key={x.id} className="f-milestone-row project-milestone-row">
             <div className="f-milestone-row-main">
-              <div className="f-milestone-row-title"><span className="f-milestone-number">#{x.sequence}</span><strong>{x.name}</strong></div>
+              <div className="f-milestone-row-title">
+                <span className="f-milestone-number">#{x.sequence}</span>
+                <strong>{x.name}</strong>
+              </div>
               <div className="f-milestone-meta">
                 <span>{Number(x.percentage).toFixed(2)}%</span>
                 <span>{money(Number(x.amount))}</span>
-                {x.plannedDate&&<span>{new Date(x.plannedDate).toLocaleDateString('id-ID')}</span>}
-                {x.invoice&&<span>Invoice {x.invoice.invoiceNumber} · {x.invoice.status}</span>}
+                {x.plannedDate&&<span>Rencana {new Date(x.plannedDate).toLocaleDateString('id-ID')}</span>}
+                {x.invoice&&<span>Invoice {x.invoice.invoiceNumber}</span>}
               </div>
             </div>
             <div className="f-milestone-row-actions">
               <Badge tone={tone(x.displayStatus||x.status)}>{x.displayStatus||x.status}</Badge>
-              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy||Boolean(x.readiness&&!x.readiness.ready)} title={x.readiness?.missing?.join(' • ')||'Siap tagih'} onClick={()=>setStatus('billing',x.id,'READY')}>Siap tagih</button>}{x.readiness&&!x.readiness.ready&&<span className="f-muted">Gate: {x.readiness.missing.join(' · ')}</span>}
+              {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy||Boolean(x.readiness&&!x.readiness.ready)} title={x.readiness?.missing?.join(' • ')||'Siap tagih'} onClick={()=>setStatus('billing',x.id,'READY')}>Siap tagih</button>}
               {can&&(x.displayStatus||x.status)==='READY'&&!x.invoice&&<button className="f-btn primary" disabled={busy} onClick={()=>createInvoice(x.id)}>Buat invoice</button>}
-              {x.invoice&&<a className="f-btn" href="/invoices">Invoice {x.invoice.invoiceNumber}</a>}
+              {x.invoice&&<a className="f-btn" href="/invoices">Lihat invoice</a>}
               {can&&x.status==='PLANNED'&&<button className="f-btn" disabled={busy} onClick={()=>remove('billing',x.id)}>Hapus</button>}
             </div>
+            {x.readiness&&!x.readiness.ready&&<div className="f-milestone-gate"><span>Belum siap</span><strong>{x.readiness.missing.join(' · ')}</strong></div>}
           </div>)}
           {!billing.length&&<div className="f-empty f-milestone-empty"><strong>Belum ada billing milestone</strong><span>Tambahkan tahapan penagihan untuk project ini.</span></div>}
-        </div>
+         </div>
         <div className="f-milestone-footnote">Status <strong>PLANNED</strong> dapat ditandai <strong>READY</strong>. Setelah invoice dibuat, status billing menjadi <strong>BILLED</strong> dan setelah invoice lunas menjadi <strong>PAID</strong>.</div>
       </Card>
 
