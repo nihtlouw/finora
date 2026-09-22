@@ -18,14 +18,12 @@ export default async function DashboardPage() {
  })
  const payments=await prisma.payment.findMany({
    where:{invoice:{clientId:{in:clientIds}}},
-   include:{invoice:{select:{invoiceNumber:true,client:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}}}},
-   select:{amount:true,paymentDate:true,method:true,createdAt:true,invoice:true},
+   select:{amount:true,paymentDate:true,method:true,createdAt:true,invoice:{select:{invoiceNumber:true,client:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}}}},
    orderBy:{paymentDate:'asc'}
  })
  const expenses=await prisma.expense.findMany({
    where:{workspaceId:context.workspace.id,status:'APPROVED'},
-   include:{vendor:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}},
-   select:{amount:true,expenseDate:true,paymentMethod:true,category:true,description:true,createdAt:true,vendor:true,project:true},
+   select:{amount:true,expenseDate:true,paymentMethod:true,category:true,description:true,createdAt:true,vendor:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}},
    orderBy:{expenseDate:'asc'}
  })
  const recentPayments=await prisma.payment.findMany({
@@ -72,6 +70,7 @@ export default async function DashboardPage() {
      detail:`${x.invoice.invoiceNumber} · ${x.invoice.client.name}${x.invoice.project?.projectCode?` · ${x.invoice.project.projectCode}`:''}`,
      amount:money(Number(x.amount)),
      when:formatRelative(new Date(x.createdAt)),
+     sortAt:new Date(x.createdAt).getTime(),
      href:`/invoices`,
    })),
    ...recentExpenses.map(x=>({
@@ -81,6 +80,7 @@ export default async function DashboardPage() {
      detail:`${x.category}${x.vendor?.name?` · ${x.vendor.name}`:''}${x.project?.projectCode?` · ${x.project.projectCode}`:''}`,
      amount:money(Number(x.amount)),
      when:formatRelative(new Date(x.createdAt)),
+     sortAt:new Date(x.createdAt).getTime(),
      href:'/expenses',
    })),
    ...recentInvoices.map(x=>({
@@ -90,9 +90,10 @@ export default async function DashboardPage() {
      detail:`${x.invoiceNumber} · ${x.client.name}${x.project?.projectCode?` · ${x.project.projectCode}`:''}`,
      amount:money(Number(x.totalAmount)),
      when:formatRelative(new Date(x.createdAt)),
+     sortAt:new Date(x.createdAt).getTime(),
      href:'/invoices',
    }))
- ].sort((a,b)=>a.when.localeCompare(b.when)).slice(0,8)
+ ].sort((a,b)=>b.sortAt-a.sortAt).slice(0,8)
   return <FinoraShell workspaceName={context.workspace.name} role={context.user.role} title="Dashboard"><div className="f-content">
   <div className="f-pagehead"><div><div className="f-eyebrow">Overview</div><h1>Selamat datang, {context.user.name?.split(' ')[0]||'Pengguna'}!</h1><p>Kelola arus kas, tagihan, dan kesehatan finansial bisnis Anda dari satu tempat.</p></div><div className="f-actions"><a className="f-btn" href="/reports">Lihat laporan</a><a className="f-btn primary" href="/proposals">+ Buat proposal</a></div></div>
   <div className="f-grid-4">
