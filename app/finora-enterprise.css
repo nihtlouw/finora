@@ -1536,3 +1536,115 @@ body{
     max-width:100%!important;
   }
 }
+
+
+/* ==========================================================================
+   Mobile navigation — final cascade guard
+   Keep this block last so the responsive menu cannot be overridden by
+   earlier desktop/reference UI rules.
+   ========================================================================== */
+@media(max-width:780px){
+  .f-mobile-menu{
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    place-items:center!important;
+    flex:0 0 36px!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    padding:0!important;
+    border:1px solid #d2ddd8!important;
+    border-radius:9px!important;
+    background:#fff!important;
+    color:#23413b!important;
+    cursor:pointer!important;
+    position:relative!important;
+    z-index:80!important;
+  }
+
+  .f-mobile-menu svg{
+    display:block!important;
+    pointer-events:none!important;
+  }
+
+  .f-mobile-close{
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    place-items:center!important;
+    margin-left:auto!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    padding:0!important;
+    border:1px solid rgba(255,255,255,.12)!important;
+    border-radius:8px!important;
+    background:rgba(255,255,255,.05)!important;
+    color:#fff!important;
+    cursor:pointer!important;
+    position:relative!important;
+    z-index:81!important;
+  }
+
+  .f-mobile-close svg{
+    display:block!important;
+    pointer-events:none!important;
+  }
+
+  .f-mobile-scrim{
+    display:block!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    position:fixed!important;
+    inset:0!important;
+    z-index:69!important;
+    width:100vw!important;
+    height:100dvh!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:rgba(7,25,22,.38)!important;
+    backdrop-filter:blur(2px)!important;
+    cursor:pointer!important;
+  }
+
+  .f-side{
+    display:flex!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    position:fixed!important;
+    top:0!important;
+    bottom:0!important;
+    left:0!important;
+    z-index:70!important;
+    width:min(292px,88vw)!important;
+    min-width:min(292px,88vw)!important;
+    max-width:292px!important;
+    transform:translate3d(-105%,0,0)!important;
+    transition:transform .18s ease,box-shadow .18s ease!important;
+  }
+
+  .f-side.is-open{
+    transform:translate3d(0,0,0)!important;
+    box-shadow:20px 0 48px rgba(8,45,39,.26)!important;
+  }
+
+  .f-main{
+    margin-left:0!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+
+  .f-top{
+    position:relative!important;
+    z-index:80!important;
+  }
+
+  .f-top-left,
+  .f-search-wrap{
+    min-width:0!important;
+  }
+}
