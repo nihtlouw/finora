@@ -340,7 +340,7 @@ export default function EmployeeManager({ role }: { role: string }) {
                 <div className="f-card-head"><div><h3>Payroll history</h3><p>Payroll yang menggunakan employee ini.</p></div></div>
                 {detail.payrollLines.length === 0 ? <div className="f-empty">Belum ada payroll history.</div> : (
                   <div className="f-table-wrap">
-                    <table className="f-table f-domain-table">
+                    <table className="f-table f-domain-table f-employee-table">
                       <thead><tr><th>Run</th><th>Status</th><th>Gross</th><th>Deduction</th><th>Net</th></tr></thead>
                       <tbody>{detail.payrollLines.map((line, index) => (
                         <tr key={line.payrollRun.runNumber + '-' + index}>
@@ -360,7 +360,7 @@ export default function EmployeeManager({ role }: { role: string }) {
                 <div className="f-card-head"><div><h3>Project allocations</h3><p>Payroll cost yang sudah dialokasikan ke project.</p></div></div>
                 {detail.payrollLines.flatMap((line) => line.allocations).length === 0 ? <div className="f-empty">Belum ada project allocation.</div> : (
                   <div className="f-table-wrap">
-                    <table className="f-table f-domain-table">
+                    <table className="f-table f-domain-table f-employee-table">
                       <thead><tr><th>Payroll</th><th>Project</th><th>%</th><th>Amount</th><th>Status</th></tr></thead>
                       <tbody>{detail.payrollLines.flatMap((line) => line.allocations.map((allocation) => (
                         <tr key={line.payrollRun.runNumber + '-' + allocation.project.projectCode}>
