@@ -33,8 +33,9 @@ export function CustomerPOManager({role}:{role:string}){
   const hasVariance = Math.abs(commercialVariance) > 0.009
   return <div className="f-content"><PageHeader eyebrow="COMMERCIAL / PURCHASE ORDER" title="PO Customer" description="Kelola PO customer sebagai sumber order, payment terms, dan dasar pembentukan project." action={<>{message&&<span className="f-badge green">{message}</span>}{can&&<button className="f-btn primary" type="button" onClick={openCreate}>+ Catat PO</button>}</>} />
     <div className="f-grid-4"><StatCard label="Total PO" value={rows.length} icon="▤"/><StatCard label="Verified" value={rows.filter(x=>x.status==='VERIFIED').length} icon="✓"/><StatCard label="Belum diverifikasi" value={rows.filter(x=>x.status==='RECEIVED').length} icon="!"/><StatCard label="Nilai PO" value={money(rows.reduce((s,x)=>s+Number(x.grandTotal||0),0))} icon="Rp"/></div>
-    <Card className="f-section-gap"><div className="f-card-head"><div><h3>Daftar PO customer</h3><p>PO menjadi sumber konfirmasi sebelum project dibuat.</p></div></div><div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>PO</th><th>Klien</th><th>Referensi</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td><strong>{x.poNumber}</strong></td><td>{x.client.name}</td><td>{x.quotation?.proposalNumber||x.reference||'—'}</td><td>{new Date(x.poDate).toLocaleDateString('id-ID')}</td><td className="f-number">{money(Number(x.grandTotal))}</td><td><Badge tone={tone(x.status)}>{x.status}</Badge></td><td><div className="f-actions">{x.status==='RECEIVED'&&can&&<><button className="f-btn soft" disabled={busy} onClick={()=>setStatus(x.id,'VERIFIED')}>Verifikasi</button><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'REJECTED')}>Tolak</button></>}{x.status==='VERIFIED'&&can&&!x.project&&<><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'CANCELLED')}>Batalkan</button><a className="f-btn primary" href={`/projects?customerPoId=${x.id}`}>Buat Project</a></>}{x.project&&<a className="f-btn soft" href={`/projects/${x.project.id}`}>Lihat Project</a>}</div></td></tr>)}</tbody></table></div>{!rows.length&&<div className="f-empty"><strong>Belum ada PO customer</strong>Catat PO dari proposal yang sudah WON.</div>}</Card>
+    <Card className="f-section-gap"><div className="f-card-head"><div><h3>Daftar PO customer</h3><p>PO menjadi sumber konfirmasi sebelum project dibuat.</p></div></div><div style={{overflowX:'auto'}}><table className="f-table f-responsive-table f-customer-po-table"><thead><tr><th>PO</th><th>Klien</th><th>Referensi</th><th>Tanggal</th><th>Nilai</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td><strong>{x.poNumber}</strong></td><td>{x.client.name}</td><td>{x.quotation?.proposalNumber||x.reference||'—'}</td><td>{new Date(x.poDate).toLocaleDateString('id-ID')}</td><td className="f-number">{money(Number(x.grandTotal))}</td><td><Badge tone={tone(x.status)}>{x.status}</Badge></td><td><div className="f-actions">{x.status==='RECEIVED'&&can&&<><button className="f-btn soft" disabled={busy} onClick={()=>setStatus(x.id,'VERIFIED')}>Verifikasi</button><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'REJECTED')}>Tolak</button></>}{x.status==='VERIFIED'&&can&&!x.project&&<><button className="f-btn" disabled={busy} onClick={()=>setStatus(x.id,'CANCELLED')}>Batalkan</button><a className="f-btn primary" href={`/projects?customerPoId=${x.id}`}>Buat Project</a></>}{x.project&&<a className="f-btn soft" href={`/projects/${x.project.id}`}>Lihat Project</a>}</div></td></tr>)}</tbody></table></div>{!rows.length&&<div className="f-empty"><strong>Belum ada PO customer</strong>Catat PO dari proposal yang sudah WON.</div>}</Card>
     <SideDrawer
+      className="f-full-workspace customer-po-entry-workspace"
       open={drawerOpen}
       onClose={closeCreate}
       title="Catat PO customer"
@@ -312,7 +313,7 @@ export function ProjectsManager({role}:{role:string}){
         <span className="f-muted">{loading?'Loading…':rows.length+' result'}</span>
       </div>
       {loading?<div className="f-empty">Memuat project…</div>:rows.length?<div className="f-table-wrap">
-        <table className="f-table f-project-table">
+        <table className="f-table f-responsive-table f-project-table">
           <thead><tr><th>Project</th><th>Customer</th><th>No. PO</th><th>Progress</th><th>Contract Value</th><th>Status</th><th></th></tr></thead>
           <tbody>
             {rows.map(x=>{
@@ -334,6 +335,7 @@ export function ProjectsManager({role}:{role:string}){
     </Card>
 
     <SideDrawer
+      className="f-project-create-drawer"
       open={drawerOpen}
       onClose={closeCreate}
       title="Create project"
