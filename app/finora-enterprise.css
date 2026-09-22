@@ -1071,3 +1071,118 @@ body{
     width:min(100vw,560px);
   }
 }
+
+
+/* Project Detail milestone layout hardening */
+.f-detail-page [id="billing-payment"]{
+  scroll-margin-top:84px;
+}
+.f-detail-page #billing-payment,
+.f-detail-page .f-milestone-manager{
+  width:100%;
+  min-width:0;
+}
+.f-detail-page .f-milestone-card{
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+.f-detail-page .f-milestone-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  align-items:center!important;
+  gap:16px!important;
+  width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+.f-detail-page .f-milestone-row-main{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.f-detail-page .f-milestone-row-title{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:8px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+.f-detail-page .f-milestone-row-title strong{
+  min-width:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:normal!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+}
+.f-detail-page .f-milestone-meta{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.f-detail-page .f-milestone-meta span{
+  display:inline-flex!important;
+  flex:0 1 auto!important;
+  width:auto!important;
+  min-width:max-content!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+}
+.f-detail-page .f-milestone-row-actions{
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:max-content!important;
+  max-width:42%!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+}
+.f-detail-page .f-milestone-row-actions .f-btn{
+  width:auto!important;
+  min-width:max-content!important;
+  white-space:nowrap!important;
+}
+.f-detail-page .f-milestone-footnote{
+  max-width:100%!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+}
+.f-detail-page .f-project-section-nav{
+  position:sticky;
+  top:64px;
+  z-index:20;
+}
+@media (max-width:760px){
+  .f-detail-page .f-project-section-nav{position:static;}
+  .f-detail-page .f-milestone-row{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:11px!important;
+  }
+  .f-detail-page .f-milestone-row-actions{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    justify-content:flex-start!important;
+  }
+  .f-detail-page .f-milestone-row-actions .f-btn{min-width:0!important;}
+  .f-detail-page .f-milestone-meta span{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+}
