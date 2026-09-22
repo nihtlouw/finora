@@ -66,7 +66,9 @@ Detail: items, allocations, receipt, approval audit, payment and cashflow.
 
 ## Interaction rules
 
-- Modals are for focused create/edit tasks.
+- Use a right drawer only for focused, low-complexity actions that can be understood and completed without a large multi-section workspace.
+- Use a dedicated full workspace / full-page form for complex transactions with many fields, repeated line items, attachments/evidence, allocations, or multi-step validation.
+- A complex form should not be squeezed into a narrow side drawer merely to preserve list context; preserving context is secondary to readable data entry.
 - Details with multiple related sections deserve drawers or dedicated pages.
 - Financial actions use confirmation with source/outstanding/status context.
 - Disabled actions must explain why.
@@ -122,3 +124,23 @@ The page should expose enough relationship context to answer quickly:
 ### Progressive disclosure
 
 Main screens should prioritize recognition and navigation. Related detail, configuration, evidence, and creation controls should appear only when the user opens the corresponding drawer or detail workspace. Avoid repeating the same large form and explanatory blocks on every page.
+
+
+### Form complexity decision rule
+
+Choose the interaction surface from the work being performed, not from a blanket "drawer-first" rule:
+
+| Complexity | Examples | Surface |
+|---|---|---|
+| Low | add bank account, add employee, simple customer edit | Right drawer |
+| Medium | invoice create, simple project setup with limited fields | Right drawer or focused modal |
+| High | payroll run creation, project expense entry with items/evidence, BOQ editing, multi-line commercial forms | Full workspace / dedicated page |
+
+A complex workspace should provide:
+- a clear page/workflow title,
+- sectioned information architecture,
+- generous horizontal space for tables and line items,
+- one primary scroll area,
+- stable bottom actions,
+- clear validation and workflow guidance,
+- mobile stacking without horizontal text collapse.
