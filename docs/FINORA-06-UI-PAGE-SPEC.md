@@ -133,8 +133,8 @@ Choose the interaction surface from the work being performed, not from a blanket
 | Complexity | Examples | Surface |
 |---|---|---|
 | Low | add bank account, add employee, simple customer edit | Right drawer |
-| Medium | invoice create, simple project setup with limited fields | Right drawer or focused modal |
-| High | payroll run creation, project expense entry with items/evidence, BOQ editing, multi-line commercial forms | Full workspace / dedicated page |
+| Medium | simple customer invoice with one line and minimal commercial fields | Right drawer or focused modal |
+| High | multi-line invoice, payroll run creation, project expense entry with items/evidence, BOQ editing, multi-line commercial forms | Full workspace / dedicated page |
 
 A complex workspace should provide:
 - a clear page/workflow title,

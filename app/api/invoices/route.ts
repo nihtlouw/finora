@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       const items = Array.isArray(b.items) ? b.items : []
       const subtotalCents = lineItemsTotalCents(items)
       commercial = calculateCommercialTotals(subtotalCents, percentageBps(b.discountPercent ?? 0, 'Diskon'), percentageBps(b.taxPercent ?? 0, 'Pajak'))
-      itemsData = items.map((x: any) => ({ description: requireText(x.description, 'Deskripsi item', 500), qty: Number(x.qty), unitPrice: positiveMoney(x.unitPrice, 'Harga satuan').decimal, category: String(x.category || 'SERVICE') }))
+      itemsData = items.map((x: any) => ({ description: requireText(x.description, 'Deskripsi item', 500), qty: Number(x.qty), unit: optionalText(x.unit, 40) || 'UNIT', unitPrice: positiveMoney(x.unitPrice, 'Harga satuan').decimal, category: String(x.category || 'SERVICE') }))
     }
 
     const dueDate = dateOnly(b.dueDate, 'Jatuh tempo')

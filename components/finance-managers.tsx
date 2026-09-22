@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Badge, Card, PageHeader, StatCard, money } from '@/components/finora-ui'
 import { SideDrawer } from '@/components/finora-side-drawer'
@@ -9,6 +9,7 @@ import MidtransPaymentButton from '@/components/midtrans-payment-button'
 type Client={id:string;name:string;type:string}
 type Proposal={id:string;proposalNumber:string;status:string;quotationReference?:string|null;projectName?:string|null;projectLocation?:string|null;scopeSummary?:string|null;subtotalAmount:any;discountPercent:any;discountAmount:any;taxPercent:any;taxAmount:any;totalAmount:any;roundedTotalAmount?:any;overheadAmount?:any;roundingAmount?:any;taxIncluded?:boolean;termsAndConditions?:string|null;validUntil:string;client:Client;items:any[];sections?:any[];invoice?:any}
 type Invoice={id:string;invoiceNumber:string;status:string;subtotalAmount:any;discountPercent:any;discountAmount:any;taxPercent:any;taxAmount:any;totalAmount:any;termsAndConditions?:string|null;paidAmount?:any;outstandingAmount?:any;dueDate:string;client:Client;payments:any[];items?:any[];proposalId?:string|null;project?:{id:string;projectCode:string;projectName:string}|null;billingMilestone?:{id:string;sequence:number;name:string}|null}
+type InvoiceDraftItem={description:string;category:string;qty:number;unit:string;unitPrice:number}
 type Payment={id:string;amount:any;paymentDate:string;method:string;invoice:any;gatewayTransaction?:{paymentType?:string|null}|null}
 type Expense={id:string;category:string;amount:any;expenseDate:string;status:string;vendor:Client}
 type Budget={id:string;category:string;period:string;plannedAmount:any;actualAmount?:any}
@@ -66,38 +67,312 @@ export function ProposalsManager({role}:{role:string}){
 
 export function InvoicesManager({role}:{role:string}){
  const searchParams=useSearchParams()
- const [rows,setRows]=useState<Invoice[]>([]),[clients,setClients]=useState<Client[]>([]),[open,setOpen]=useState(false),[payId,setPayId]=useState<string|null>(null),[editId,setEditId]=useState<string|null>(null),[msg,setMsg]=useState(''),[msgTone,setMsgTone]=useState<'success'|'error'|'info'>('success'),[busy,setBusy]=useState(false)
- const [form,setForm]=useState({clientId:'',dueDate:'',description:'Jasa profesional',qty:1,unitPrice:0,discountPercent:0,taxPercent:0,termsAndConditions:''})
- async function load(){const [a,b]=await Promise.all([fetch('/api/invoices',{cache:'no-store'}),fetch('/api/clients?type=CLIENT',{cache:'no-store'})]);const ad=await readResponseBody(a),bd=await readResponseBody(b);setRows(ad.invoices||[]);setClients(bd.clients||[])}useEffect(()=>{load()},[])
+ const [rows,setRows]=useState<Invoice[]>([])
+ const [clients,setClients]=useState<Client[]>([])
+ const [open,setOpen]=useState(false)
+ const [payId,setPayId]=useState<string|null>(null)
+ const [editId,setEditId]=useState<string|null>(null)
+ const [msg,setMsg]=useState('')
+ const [msgTone,setMsgTone]=useState<'success'|'error'|'info'>('success')
+ const [busy,setBusy]=useState(false)
+ const [form,setForm]=useState({
+   invoiceNumber:'',
+   clientId:'',
+   dueDate:'',
+   discountPercent:0,
+   taxPercent:0,
+   termsAndConditions:'',
+   items:[{description:'Jasa profesional',category:'SERVICE',qty:1,unit:'UNIT',unitPrice:0}] as InvoiceDraftItem[],
+ })
+
+ async function load(){
+   const [a,b]=await Promise.all([
+     fetch('/api/invoices',{cache:'no-store'}),
+     fetch('/api/clients?type=CLIENT',{cache:'no-store'}),
+   ])
+   const ad=await readResponseBody(a),bd=await readResponseBody(b)
+   setRows(ad.invoices||[])
+   setClients(bd.clients||[])
+ }
+
+ useEffect(()=>{load()},[])
+
  useEffect(()=>{
-  const orderId=searchParams.get('gatewayOrderId')
-  if(!orderId) return
-  let cancelled=false
-  const sync=async()=>{
-   setMsg('Memverifikasi pembayaran Midtrans...');setMsgTone('info')
-   try{
-    const r=await fetch(`/api/payments/gateway/midtrans/status?orderId=${encodeURIComponent(orderId)}`,{cache:'no-store'})
-    const d=await readResponseBody(r)
-    if(cancelled)return
-    if(!r.ok) throw new Error(d.error||`Gagal menyinkronkan pembayaran (${r.status}).`)
-    const labels:any={SETTLEMENT:'Pembayaran berhasil dikonfirmasi. Invoice diperbarui menjadi PARTIAL/PAID.',PENDING:'Pembayaran masih menunggu konfirmasi Midtrans.',REVIEW:'Pembayaran memerlukan pemeriksaan lebih lanjut.',FAILED:'Pembayaran gagal.',EXPIRED:'Pembayaran kedaluwarsa.',CANCELLED:'Pembayaran dibatalkan.'}
-    setMsg(labels[d.status]||`Status pembayaran: ${d.status||'tidak diketahui'}.`)
-    setMsgTone(d.status==='SETTLEMENT'?'success':d.status==='FAILED'||d.status==='EXPIRED'||d.status==='CANCELLED'||d.status==='REVIEW'?'error':'info')
-    await load()
-   }catch(e){if(!cancelled){setMsg(e instanceof Error?e.message:'Gagal menyinkronkan pembayaran.');setMsgTone('error')}}
-   finally{
-    const url=new URL(window.location.href);url.searchParams.delete('gatewayOrderId');url.searchParams.delete('invoiceId');window.history.replaceState({},'',url.toString())
+   const orderId=searchParams.get('gatewayOrderId')
+   if(!orderId) return
+   let cancelled=false
+   const sync=async()=>{
+     setMsg('Memverifikasi pembayaran Midtrans...');setMsgTone('info')
+     try{
+       const r=await fetch(`/api/payments/gateway/midtrans/status?orderId=${encodeURIComponent(orderId)}`,{cache:'no-store'})
+       const d=await readResponseBody(r)
+       if(cancelled)return
+       if(!r.ok) throw new Error(d.error||`Gagal menyinkronkan pembayaran (${r.status}).`)
+       const labels:any={SETTLEMENT:'Pembayaran berhasil dikonfirmasi. Invoice diperbarui menjadi PARTIAL/PAID.',PENDING:'Pembayaran masih menunggu konfirmasi Midtrans.',REVIEW:'Pembayaran memerlukan pemeriksaan lebih lanjut.',FAILED:'Pembayaran gagal.',EXPIRED:'Pembayaran kedaluwarsa.',CANCELLED:'Pembayaran dibatalkan.'}
+       setMsg(labels[d.status]||`Status pembayaran: ${d.status||'tidak diketahui'}.`)
+       setMsgTone(d.status==='SETTLEMENT'?'success':d.status==='FAILED'||d.status==='EXPIRED'||d.status==='CANCELLED'||d.status==='REVIEW'?'error':'info')
+       await load()
+     }catch(e){
+       if(!cancelled){setMsg(e instanceof Error?e.message:'Gagal menyinkronkan pembayaran.');setMsgTone('error')}
+     }finally{
+       const url=new URL(window.location.href)
+       url.searchParams.delete('gatewayOrderId')
+       url.searchParams.delete('invoiceId')
+       window.history.replaceState({},'',url.toString())
+     }
    }
-  }
-  void sync()
-  return()=>{cancelled=true}
+   void sync()
+   return()=>{cancelled=true}
  },[searchParams])
- function startNew(){setEditId(null);setForm({clientId:'',dueDate:'',description:'Jasa profesional',qty:1,unitPrice:0,discountPercent:0,taxPercent:0,termsAndConditions:''});setOpen(true)}
- function startEdit(x:Invoice){const i=x.items?.[0];setEditId(x.id);setForm({clientId:x.client.id,dueDate:String(x.dueDate).slice(0,10),description:i?.description||'',qty:i?.qty||1,unitPrice:Number(i?.unitPrice||0),discountPercent:Number(x.discountPercent||0),taxPercent:Number(x.taxPercent||0),termsAndConditions:x.termsAndConditions||''});setOpen(true)}
- const subtotal=form.qty*form.unitPrice,discount=subtotal*(Number(form.discountPercent||0)/100),taxable=Math.max(0,subtotal-discount),tax=taxable*(Number(form.taxPercent||0)/100),grandTotal=taxable+tax
- async function save(e:any){e.preventDefault();const body={clientId:form.clientId,dueDate:form.dueDate||new Date(Date.now()+14*864e5).toISOString().slice(0,10),discountPercent:form.discountPercent,taxPercent:form.taxPercent,termsAndConditions:form.termsAndConditions,items:[{description:form.description,qty:form.qty,unitPrice:form.unitPrice}]};const r=await fetch(editId?`/api/invoices/${editId}`:'/api/invoices',{method:editId?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await readResponseBody(r);setMsg(r.ok?(editId?'Invoice diperbarui.':'Invoice berhasil dibuat.'):(d.error||`Gagal menyimpan invoice (${r.status}).`));setMsgTone(r.ok?'success':'error');if(r.ok){setOpen(false);load()}}
- async function remove(x:Invoice){if(!confirm(`Hapus invoice ${x.invoiceNumber}?`))return;const r=await fetch(`/api/invoices/${x.id}`,{method:'DELETE'});const d=await readResponseBody(r);setMsg(r.ok?'Invoice dihapus.':(d.error||`Gagal menghapus invoice (${r.status}).`));setMsgTone(r.ok?'success':'error');if(r.ok)load()}
- return <div className="f-content"><PageHeader eyebrow="Penjualan / Tagihan" title="Invoice" description="Kelola invoice aktual, partial payment, outstanding, dan keterkaitannya dengan project/billing milestone." action={canWrite(role)&&<button className="f-btn primary" onClick={startNew}>＋ Buat Invoice</button>}/><div className="f-grid-4"><StatCard label="Total invoice" value={rows.length} icon="▧"/><StatCard label="Belum dibayar" value={rows.filter(x=>x.status!=='PAID').length} icon="◷"/><StatCard label="Nilai piutang" value={money(rows.reduce((s,x)=>s+Number(x.outstandingAmount??0),0))} icon="Rp"/><StatCard label="Lunas" value={rows.filter(x=>x.status==='PAID').length} icon="✓"/></div><div style={{height:16}}/><Card><div className="f-card-head f-invoice-card-head"><div><h3>Daftar invoice aktual</h3><p>Invoice adalah sumber angka Invoiced. Project dan billing milestone ditampilkan agar hubungan rencana → tagihan → pembayaran mudah ditelusuri.</p></div></div><div className="f-inline-alert info"><strong>Untuk invoice project:</strong> mulai dari <strong>Billing milestone → Buat invoice</strong> agar project dan milestone otomatis tertaut. Pembayaran kemudian memperbarui invoice, cashflow, dan status milestone.</div>{msg&&<div className={`f-inline-alert ${msgTone}`}>{msg}</div>}<div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>Invoice</th><th>Project</th><th>Klien</th><th>Jatuh tempo</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td><strong>{x.invoiceNumber}</strong>{x.billingMilestone&&<div className="f-muted" style={{fontSize:11}}>Billing #{x.billingMilestone.sequence}: {x.billingMilestone.name}</div>}</td><td>{x.project?<a href={`/projects/${x.project.id}`}>{x.project.projectCode}</a>:'—'}</td><td>{x.client.name}</td><td>{new Date(x.dueDate).toLocaleDateString('id-ID')}</td><td className="f-number">{money(Number(x.totalAmount))}</td><td><div className="f-invoice-status"><Badge tone={x.status==='PAID'?'green':x.status==='OVERDUE'?'red':x.status==='PARTIAL'?'blue':'amber'}>{x.status}</Badge>{x.outstandingAmount!==undefined&&Number(x.outstandingAmount)>0&&<span className="f-status-sub">Sisa {money(Number(x.outstandingAmount))}</span>}</div></td><td><div className="f-invoice-action-group"><a className="f-btn f-btn-compact" href={`/documents/invoices/${x.id}`} target="_blank" rel="noreferrer">PDF</a>{x.status!=='PAID'&&<button className="f-btn soft f-btn-compact" onClick={()=>setPayId(x.id)}>Bayar</button>}{canFinance(role)&&x.status!=='PAID'&&<MidtransPaymentButton invoice={x} onUpdated={load} onMessage={(text,tone)=>{setMsg(text);setMsgTone(tone||'info')}}/>}{canWrite(role)&&!x.payments?.length&&!x.proposalId&&<button className="f-btn" onClick={()=>startEdit(x)}>Edit</button>}{canFinance(role)&&!x.payments?.length&&!x.proposalId&&<button className="f-btn" onClick={()=>remove(x)}>Hapus</button>}{canWrite(role)&&x.status==='UNPAID'&&!x.payments?.length&&<button className="f-btn soft" disabled={busy} onClick={async()=>{setBusy(true);const r=await fetch(`/api/invoices/${x.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'MARK_SENT'})});const d=await readResponseBody(r);setMsg(r.ok?(d.message||'Invoice ditandai terkirim.'):(d.error||`Gagal mengubah status (${r.status}).`));setMsgTone(r.ok?'success':'error');if(r.ok)await load();setBusy(false)}}>Tandai terkirim</button>}{canFinance(role)&&x.status==='OVERDUE'&&<button className="f-btn soft" disabled={busy} onClick={async()=>{setBusy(true);const r=await fetch(`/api/invoices/${x.id}/remind`,{method:'POST'});const d=await readResponseBody(r);setMsg(r.ok?(d.message||'Pengingat dicatat.'):(d.error||`Gagal mencatat pengingat (${r.status}).`));setMsgTone(r.ok?'success':'error');setBusy(false)}}>Pengingat</button>}</div></td></tr>)}</tbody></table></div></Card>{open&&<SideDrawer open={open} onClose={()=>setOpen(false)} title={editId?'Edit Invoice':'Buat Invoice'} description="Input cepat untuk invoice manual. Untuk invoice project, gunakan Billing milestone agar relasi project tetap terjaga." footer={<div className="f-drawer-actions"><button type="button" className="f-btn" onClick={()=>setOpen(false)}>Batal</button><button className="f-btn primary" form="invoice-drawer-form">Simpan invoice</button></div>}><form id="invoice-drawer-form" className="f-form f-commercial-form" onSubmit={save}><div className="f-form-section"><div className="f-form-section-title">Informasi invoice</div><div className="f-form-grid"><label>Klien<select className="f-select" required value={form.clientId} onChange={e=>setForm({...form,clientId:e.target.value})}><option value="">Pilih klien</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Jatuh tempo<input className="f-input" type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label></div></div><div className="f-form-section"><div className="f-form-section-title">Item</div><label>Deskripsi<textarea className="f-textarea" rows={2} value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></label><div className="f-form-grid"><label>Qty<input className="f-input" inputMode="numeric" type="number" min="1" step="1" value={form.qty} onChange={e=>setForm({...form,qty:Math.max(1,Number(e.target.value)||1)})}/></label><label>Harga satuan<input className="f-input" inputMode="numeric" type="number" min="1" step="1" value={form.unitPrice} onChange={e=>setForm({...form,unitPrice:Math.max(0,Number(e.target.value)||0)})}/></label></div></div><div className="f-form-section"><div className="f-form-section-title">Diskon & Pajak</div><div className="f-form-grid"><label>Diskon (%)<input className="f-input" inputMode="decimal" type="number" min="0" max="100" step="0.01" value={form.discountPercent} onChange={e=>setForm({...form,discountPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label><label>Pajak (%)<input className="f-input" inputMode="decimal" type="number" min="0" max="100" step="0.01" value={form.taxPercent} onChange={e=>setForm({...form,taxPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label></div></div><div className="f-form-section"><div className="f-form-section-title">Terms & Conditions <span className="f-optional">opsional</span></div><textarea className="f-textarea" rows={4} value={form.termsAndConditions} onChange={e=>setForm({...form,termsAndConditions:e.target.value})} placeholder="Contoh: Jatuh tempo 14 hari."/></div><div className="f-summary-card"><div className="f-summary-head"><div><strong>Ringkasan invoice</strong><span>Total otomatis mengikuti diskon & pajak.</span></div><div className="f-summary-total">{money(grandTotal)}</div></div><div className="f-summary-lines"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><div><span>Diskon</span><strong className={discount>0?'negative':''}>- {money(discount)}</strong></div><div><span>Pajak</span><strong>{money(tax)}</strong></div><div className="total"><span>Total</span><strong>{money(grandTotal)}</strong></div></div></div></form></SideDrawer>}{payId&&<PaymentModal invoice={rows.find(x=>x.id===payId)!} onClose={()=>setPayId(null)} onSaved={()=>{setPayId(null);load()}}/>}</div>
+
+ function resetForm(){
+   setForm({
+     invoiceNumber:'',
+     clientId:'',
+     dueDate:'',
+     discountPercent:0,
+     taxPercent:0,
+     termsAndConditions:'',
+     items:[{description:'Jasa profesional',category:'SERVICE',qty:1,unit:'UNIT',unitPrice:0}],
+   })
+ }
+
+ function startNew(){
+   setEditId(null)
+   resetForm()
+   setMsg('')
+   setOpen(true)
+ }
+
+ function startEdit(x:Invoice){
+   setEditId(x.id)
+   setForm({
+     invoiceNumber:x.invoiceNumber||'',
+     clientId:x.client.id,
+     dueDate:String(x.dueDate).slice(0,10),
+     discountPercent:Number(x.discountPercent||0),
+     taxPercent:Number(x.taxPercent||0),
+     termsAndConditions:x.termsAndConditions||'',
+     items:x.items?.length
+       ? x.items.map((item:any)=>({
+           description:item.description||'',
+           category:item.category||'SERVICE',
+           qty:Number(item.qty||1),
+           unit:item.unit||'UNIT',
+           unitPrice:Number(item.unitPrice||0),
+         }))
+       : [{description:'',category:'SERVICE',qty:1,unit:'UNIT',unitPrice:0}],
+   })
+   setMsg('')
+   setOpen(true)
+ }
+
+ function updateItem(index:number,patch:Partial<InvoiceDraftItem>){
+   setForm(current=>({...current,items:current.items.map((item,itemIndex)=>itemIndex===index?{...item,...patch}:item)}))
+ }
+
+ function addItem(){
+   setForm(current=>({...current,items:[...current.items,{description:'',category:'SERVICE',qty:1,unit:'UNIT',unitPrice:0}]}))
+ }
+
+ function removeItem(index:number){
+   setForm(current=>({...current,items:current.items.length===1?current.items:current.items.filter((_,itemIndex)=>itemIndex!==index)}))
+ }
+
+ const subtotal=useMemo(()=>form.items.reduce((sum,item)=>sum+item.qty*item.unitPrice,0),[form.items])
+ const discount=useMemo(()=>subtotal*(Number(form.discountPercent||0)/100),[subtotal,form.discountPercent])
+ const taxable=Math.max(0,subtotal-discount)
+ const tax=useMemo(()=>taxable*(Number(form.taxPercent||0)/100),[taxable,form.taxPercent])
+ const grandTotal=taxable+tax
+
+ async function save(e:any){
+   e.preventDefault()
+   setBusy(true)
+   setMsg('')
+   try{
+     if(!form.clientId) throw new Error('Klien wajib dipilih.')
+     if(!form.items.length) throw new Error('Minimal satu item invoice harus ada.')
+     if(form.items.some(item=>!item.description.trim()||item.qty<=0||item.unitPrice<0||!item.unit.trim())) throw new Error('Lengkapi deskripsi, qty, satuan, dan harga setiap item.')
+     const body={
+       invoiceNumber:form.invoiceNumber.trim()||undefined,
+       clientId:form.clientId,
+       dueDate:form.dueDate||new Date(Date.now()+14*864e5).toISOString().slice(0,10),
+       discountPercent:form.discountPercent,
+       taxPercent:form.taxPercent,
+       termsAndConditions:form.termsAndConditions,
+       items:form.items.map(item=>({
+         description:item.description.trim(),
+         category:item.category||'SERVICE',
+         qty:item.qty,
+         unit:item.unit.trim(),
+         unitPrice:item.unitPrice,
+       })),
+     }
+     const r=await fetch(editId?`/api/invoices/${editId}`:'/api/invoices',{
+       method:editId?'PATCH':'POST',
+       headers:{'Content-Type':'application/json'},
+       body:JSON.stringify(body),
+     })
+     const d=await readResponseBody(r)
+     if(!r.ok) throw new Error(d.error||`Gagal menyimpan invoice (${r.status}).`)
+     setOpen(false)
+     setMsg(editId?'Invoice diperbarui.':'Invoice berhasil dibuat.')
+     setMsgTone('success')
+     await load()
+   }catch(e){
+     setMsg(e instanceof Error?e.message:'Gagal menyimpan invoice.')
+     setMsgTone('error')
+   }finally{
+     setBusy(false)
+   }
+ }
+
+ async function remove(x:Invoice){
+   if(!confirm(`Hapus invoice ${x.invoiceNumber}?`))return
+   const r=await fetch(`/api/invoices/${x.id}`,{method:'DELETE'})
+   const d=await readResponseBody(r)
+   setMsg(r.ok?'Invoice dihapus.':(d.error||`Gagal menghapus invoice (${r.status}).`))
+   setMsgTone(r.ok?'success':'error')
+   if(r.ok)await load()
+ }
+
+ return <div className="f-content f-domain-page">
+   <PageHeader
+     eyebrow="PENJUALAN / TAGIHAN"
+     title="Invoice"
+     description="Kelola tagihan aktual, outstanding, pembayaran, dan hubungan invoice dengan project."
+     action={canWrite(role)&&<button className="f-btn primary" onClick={startNew}>＋ Buat Invoice</button>}
+   />
+   <div className="f-grid-4 f-domain-kpis">
+     <StatCard label="Total invoice" value={rows.length} icon="▧"/>
+     <StatCard label="Belum dibayar" value={rows.filter(x=>x.status!=='PAID').length} icon="◷"/>
+     <StatCard label="Nilai piutang" value={money(rows.reduce((s,x)=>s+Number(x.outstandingAmount??0),0))} icon="Rp"/>
+     <StatCard label="Lunas" value={rows.filter(x=>x.status==='PAID').length} icon="✓"/>
+   </div>
+   <Card className="f-domain-card">
+     <div className="f-card-head f-invoice-card-head">
+       <div><h3>Daftar invoice aktual</h3><p>Gunakan invoice dari Billing Milestone untuk transaksi project agar relasi project → billing → payment tetap terjaga.</p></div>
+     </div>
+     <div className="f-inline-alert info">
+       <strong>Invoice project:</strong> buat dari <strong>Project → Billing &amp; Payment → Buat invoice</strong>. Form ini digunakan untuk invoice manual/non-project.
+     </div>
+     {msg&&<div className={`f-inline-alert ${msgTone}`}>{msg}</div>}
+     <div style={{overflowX:'auto'}}>
+       <table className="f-table">
+         <thead><tr><th>Invoice</th><th>Project</th><th>Klien</th><th>Jatuh tempo</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+         <tbody>{rows.map(x=>
+           <tr key={x.id}>
+             <td><strong>{x.invoiceNumber}</strong>{x.billingMilestone&&<div className="f-muted" style={{fontSize:11}}>Billing #{x.billingMilestone.sequence}: {x.billingMilestone.name}</div>}</td>
+             <td>{x.project?<a href={`/projects/${x.project.id}`}>{x.project.projectCode}</a>:'—'}</td>
+             <td>{x.client.name}</td>
+             <td>{new Date(x.dueDate).toLocaleDateString('id-ID')}</td>
+             <td className="f-number">{money(Number(x.totalAmount))}</td>
+             <td><div className="f-invoice-status"><Badge tone={x.status==='PAID'?'green':x.status==='OVERDUE'?'red':x.status==='PARTIAL'?'blue':'amber'}>{x.status}</Badge>{x.outstandingAmount!==undefined&&Number(x.outstandingAmount)>0&&<span className="f-status-sub">Sisa {money(Number(x.outstandingAmount))}</span>}</div></td>
+             <td>
+               <div className="f-invoice-action-group">
+                 <a className="f-btn f-btn-compact" href={`/documents/invoices/${x.id}`} target="_blank" rel="noreferrer">PDF</a>
+                 {x.status!=='PAID'&&<button className="f-btn soft f-btn-compact" onClick={()=>setPayId(x.id)}>Bayar</button>}
+                 {canFinance(role)&&x.status!=='PAID'&&<MidtransPaymentButton invoice={x} onUpdated={load} onMessage={(text,tone)=>{setMsg(text);setMsgTone(tone||'info')}}/>}
+                 {canWrite(role)&&!x.payments?.length&&!x.proposalId&&!x.project&&<button className="f-btn" onClick={()=>startEdit(x)}>Edit</button>}
+                 {canFinance(role)&&!x.payments?.length&&!x.proposalId&&!x.project&&<button className="f-btn" onClick={()=>remove(x)}>Hapus</button>}
+                 {canWrite(role)&&x.status==='UNPAID'&&!x.payments?.length&&<button className="f-btn soft" disabled={busy} onClick={async()=>{
+                   setBusy(true)
+                   const r=await fetch(`/api/invoices/${x.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'MARK_SENT'})})
+                   const d=await readResponseBody(r)
+                   setMsg(r.ok?(d.message||'Invoice ditandai terkirim.'):(d.error||`Gagal mengubah status (${r.status}).`))
+                   setMsgTone(r.ok?'success':'error')
+                   if(r.ok)await load()
+                   setBusy(false)
+                 }}>Tandai terkirim</button>}
+                 {canFinance(role)&&x.status==='OVERDUE'&&<button className="f-btn soft" disabled={busy} onClick={async()=>{
+                   setBusy(true)
+                   const r=await fetch(`/api/invoices/${x.id}/remind`,{method:'POST'})
+                   const d=await readResponseBody(r)
+                   setMsg(r.ok?(d.message||'Pengingat dicatat.'):(d.error||`Gagal mencatat pengingat (${r.status}).`))
+                   setMsgTone(r.ok?'success':'error')
+                   setBusy(false)
+                 }}>Pengingat</button>}
+               </div>
+             </td>
+           </tr>
+         )}</tbody>
+       </table>
+     </div>
+   </Card>
+
+   {open&&<SideDrawer
+     open={open}
+     onClose={()=>!busy&&setOpen(false)}
+     title={editId?'Edit Invoice':'Buat Invoice Manual'}
+     description="Gunakan workspace ini untuk invoice non-project. Invoice project harus berasal dari Billing Milestone READY."
+     className="invoice-entry-workspace"
+     footer={<div className="f-drawer-actions"><button type="button" className="f-btn" disabled={busy} onClick={()=>setOpen(false)}>Batal</button><button className="f-btn primary" disabled={busy||!form.clientId||grandTotal<=0} form="invoice-entry-form">{busy?'Menyimpan…':editId?'Simpan perubahan':'Simpan invoice'}</button></div>}
+   >
+     <form id="invoice-entry-form" className="invoice-entry-form" onSubmit={save}>
+       <div className="invoice-entry-grid">
+         <section className="invoice-form-section invoice-context-section">
+           <div className="invoice-section-heading">
+             <span className="invoice-section-index">01</span>
+             <div><h3>Identitas invoice</h3><p>Dokumen tagihan manual/non-project.</p></div>
+           </div>
+           <div className="invoice-field-grid">
+             <label>Nomor invoice <span className="invoice-optional">opsional — otomatis bila kosong</span><input className="f-input" value={form.invoiceNumber} onChange={e=>setForm({...form,invoiceNumber:e.target.value})} placeholder="Contoh: INV-2026-001"/></label>
+             <label>Klien<select className="f-select" required value={form.clientId} onChange={e=>setForm({...form,clientId:e.target.value})}><option value="">Pilih klien</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+             <label>Jatuh tempo<input className="f-input" type="date" value={form.dueDate} onChange={e=>setForm({...form,dueDate:e.target.value})}/></label>
+           </div>
+         </section>
+
+         <section className="invoice-form-section invoice-items-section">
+           <div className="invoice-section-heading invoice-section-heading-between">
+             <div className="invoice-heading-left"><span className="invoice-section-index">02</span><div><h3>Item invoice</h3><p>Invoice dapat memiliki beberapa baris item. Total dihitung otomatis.</p></div></div>
+             <span className="f-badge blue">{form.items.length} item</span>
+           </div>
+           <div className="invoice-items-table">
+             <div className="invoice-item-head"><span>Item / uraian</span><span>Kategori</span><span>Qty</span><span>Satuan</span><span>Harga satuan</span><span>Total</span><span></span></div>
+             {form.items.map((item,index)=>
+               <div className="invoice-item-row" key={index}>
+                 <input className="f-input" value={item.description} onChange={e=>updateItem(index,{description:e.target.value})} placeholder="Contoh: Jasa terminasi kabel"/>
+                 <select className="f-select" value={item.category} onChange={e=>updateItem(index,{category:e.target.value})}><option value="SERVICE">Jasa</option><option value="MATERIAL">Material</option><option value="OTHER">Lainnya</option></select>
+                 <input className="f-input" type="number" min="1" step="1" value={item.qty} onChange={e=>updateItem(index,{qty:Math.max(1,Number(e.target.value)||1)})}/>
+                 <input className="f-input" value={item.unit} onChange={e=>updateItem(index,{unit:e.target.value})} placeholder="UNIT"/>
+                 <input className="f-input" type="number" min="0" step="0.01" value={item.unitPrice} onChange={e=>updateItem(index,{unitPrice:Math.max(0,Number(e.target.value)||0)})}/>
+                 <strong className="invoice-item-total">{money(item.qty*item.unitPrice)}</strong>
+                 <button type="button" className="invoice-item-remove" disabled={form.items.length===1} onClick={()=>removeItem(index)} aria-label={`Hapus item ${index+1}`}>×</button>
+               </div>
+             )}
+           </div>
+           <button type="button" className="f-btn soft invoice-add-item" onClick={addItem}>＋ Tambah item</button>
+         </section>
+
+         <section className="invoice-form-section invoice-commercial-section">
+           <div className="invoice-section-heading">
+             <span className="invoice-section-index">03</span>
+             <div><h3>Commercial</h3><p>Atur diskon, pajak, dan ketentuan pembayaran.</p></div>
+           </div>
+           <div className="invoice-field-grid invoice-commercial-grid">
+             <label>Diskon (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.discountPercent} onChange={e=>setForm({...form,discountPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label>
+             <label>Pajak (%)<input className="f-input" type="number" min="0" max="100" step="0.01" value={form.taxPercent} onChange={e=>setForm({...form,taxPercent:Math.min(100,Math.max(0,Number(e.target.value)||0))})}/></label>
+             <label className="invoice-terms-field">Terms &amp; Conditions<textarea className="f-textarea" rows={4} value={form.termsAndConditions} onChange={e=>setForm({...form,termsAndConditions:e.target.value})} placeholder="Contoh: pembayaran 14 hari setelah invoice diterima."/></textarea></label>
+           </div>
+         </section>
+
+         <aside className="invoice-summary-panel">
+           <div className="invoice-summary-kicker">INVOICE TOTAL</div>
+           <div className="invoice-summary-total">{money(grandTotal)}</div>
+           <div className="invoice-summary-lines">
+             <div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
+             <div><span>Diskon</span><strong>- {money(discount)}</strong></div>
+             <div><span>Pajak</span><strong>{money(tax)}</strong></div>
+             <div className="invoice-summary-grand"><span>Grand total</span><strong>{money(grandTotal)}</strong></div>
+           </div>
+           <div className="invoice-summary-note">Invoice project harus dibuat dari Billing Milestone agar project, invoice, payment, dan cashflow tetap terhubung.</div>
+         </aside>
+       </div>
+     </form>
+   </SideDrawer>}
+
+   {payId&&<PaymentModal invoice={rows.find(x=>x.id===payId)!} onClose={()=>setPayId(null)} onSaved={()=>{setPayId(null);load()}}/>}
+ </div>
 }
 
 export function PaymentsManager({role}:{role:string}){const [rows,setRows]=useState<Payment[]>([]);useEffect(()=>{fetch('/api/payments').then(r=>r.json()).then(d=>setRows(d.payments||[]))},[]);return <div className="f-content"><PageHeader eyebrow="Kas / Payment" title="Pembayaran" description="Riwayat uang masuk yang berasal dari invoice."/><Card><div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>Tanggal</th><th>Invoice</th><th>Project</th><th>Klien</th><th>Metode</th><th>Nominal</th><th>Status</th></tr></thead><tbody>{rows.map(x=><tr key={x.id}><td>{new Date(x.paymentDate).toLocaleDateString('id-ID')}</td><td>{x.invoice.invoiceNumber}</td><td>{x.invoice.project?<a href={`/projects/${x.invoice.project.id}`}>{x.invoice.project.projectCode}</a>:'—'}</td><td>{x.invoice.client.name}</td><td>{x.method}{x.gatewayTransaction?.paymentType&&<div className="f-muted" style={{fontSize:11}}>{x.gatewayTransaction.paymentType}</div>}</td><td className="f-number">{money(Number(x.amount))}</td><td><Badge tone="green">Selesai</Badge></td></tr>)}</tbody></table></div>{!rows.length&&<div className="f-empty"><strong>Belum ada pembayaran</strong>Pembayaran dicatat dari halaman Invoice agar selalu terhubung ke tagihan.</div>}</Card></div>}
