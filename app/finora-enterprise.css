@@ -3273,3 +3273,10 @@ body{
   }
 }
 
+@media(max-width:780px){
+  .f-enterprise-table td:nth-child(1)::before{content:'Identitas'}
+  .f-enterprise-table td:nth-child(2)::before{content:'Status'}
+  .f-enterprise-table td:nth-child(3)::before{content:'Nilai'}
+  .f-enterprise-table td:nth-child(4)::before{content:'Tanggal / Periode'}
+  .f-enterprise-table td:nth-child(5)::before{content:'Aksi'}
+}
