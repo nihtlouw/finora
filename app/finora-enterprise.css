@@ -1648,3 +1648,281 @@ body{
     min-width:0!important;
   }
 }
+
+
+/* ==========================================================================
+   Dashboard live visualization + activity feed
+   ========================================================================== */
+
+.dashboard-cashflow-card .f-card-head,
+.dashboard-activity-card .f-card-head{
+  min-height:68px!important;
+}
+
+.dashboard-cashflow-card .f-card-head{
+  align-items:center!important;
+}
+
+.dashboard-cashflow-card .f-live-dot{
+  display:inline-block!important;
+  width:6px!important;
+  height:6px!important;
+  margin-right:5px!important;
+  border-radius:50%!important;
+  background:#21876d!important;
+  box-shadow:0 0 0 3px rgba(33,135,109,.12)!important;
+}
+
+.f-live-chart{
+  position:relative!important;
+  padding:0 15px 10px!important;
+}
+
+.f-chart-legend{
+  align-items:center!important;
+  min-height:29px!important;
+  padding:8px 2px 0!important;
+}
+
+.f-chart-hover-hint{
+  margin-left:auto!important;
+  color:#66766f!important;
+  font-size:8px!important;
+}
+
+.f-chart-hover-hint strong{
+  color:#21483e!important;
+  font-weight:850!important;
+}
+
+.f-chart-live-area{
+  position:relative!important;
+  height:270px!important;
+  width:100%!important;
+  min-width:0!important;
+}
+
+.f-chart-svg{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  overflow:visible!important;
+  cursor:crosshair!important;
+  touch-action:none!important;
+}
+
+.f-chart-crosshair{
+  stroke:#94a8a0!important;
+  stroke-width:1!important;
+  stroke-dasharray:4 4!important;
+  pointer-events:none!important;
+}
+
+.f-chart-point-income,
+.f-chart-point-expense{
+  transition:r .12s ease!important;
+  stroke-width:1.5!important;
+  stroke:#fffefa!important;
+  pointer-events:none!important;
+}
+
+.f-chart-point-income.active,
+.f-chart-point-expense.active{
+  stroke-width:2.5!important;
+}
+
+.f-chart-axis.active{
+  fill:#234b41!important;
+  font-weight:800!important;
+}
+
+.f-chart-tooltip{
+  position:absolute!important;
+  top:7px!important;
+  transform:translateX(-50%)!important;
+  width:174px!important;
+  padding:10px 11px!important;
+  border:1px solid #d3dfda!important;
+  border-radius:9px!important;
+  background:rgba(255,255,252,.97)!important;
+  box-shadow:0 12px 28px rgba(12,44,37,.12)!important;
+  backdrop-filter:blur(8px)!important;
+  pointer-events:none!important;
+  z-index:3!important;
+}
+
+.f-chart-tooltip>strong{
+  display:block!important;
+  margin-bottom:6px!important;
+  color:#18372f!important;
+  font-size:10px!important;
+}
+
+.f-chart-tooltip>div{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  padding:4px 0!important;
+  color:#687972!important;
+  font-size:8px!important;
+}
+
+.f-chart-tooltip b{
+  color:#25453d!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+.f-chart-tooltip .net{
+  margin-top:3px!important;
+  padding-top:6px!important;
+  border-top:1px solid #e0e7e3!important;
+  color:#264a41!important;
+  font-weight:800!important;
+}
+
+.f-tooltip-dot{
+  width:6px!important;
+  height:6px!important;
+  margin-right:5px!important;
+  flex:0 0 auto!important;
+  border-radius:50%!important;
+  display:inline-block!important;
+}
+
+.f-tooltip-dot.income{background:#20856c!important}
+.f-tooltip-dot.expense{background:#d88970!important}
+
+.f-chart-tooltip>div:not(.net){
+  justify-content:flex-start!important;
+}
+
+.f-chart-tooltip>div:not(.net) b{
+  margin-left:auto!important;
+}
+
+.f-activity-feed{
+  display:flex!important;
+  flex-direction:column!important;
+}
+
+.f-activity-item{
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:9px!important;
+  min-height:74px!important;
+  padding:11px 13px!important;
+  border-bottom:1px solid var(--fe-line-soft)!important;
+  text-decoration:none!important;
+  transition:background .14s ease!important;
+}
+
+.f-activity-item:hover{
+  background:#f7faf7!important;
+}
+
+.f-activity-item:last-child{
+  border-bottom:0!important;
+}
+
+.f-activity-icon{
+  width:30px!important;
+  height:30px!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+  border-radius:9px!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  border:1px solid transparent!important;
+}
+
+.f-activity-icon.payment{
+  color:#14745f!important;
+  background:#e7f4ee!important;
+  border-color:#cfe8dd!important;
+}
+
+.f-activity-icon.expense{
+  color:#b56a4f!important;
+  background:#fbede7!important;
+  border-color:#f0d8cf!important;
+}
+
+.f-activity-icon.invoice{
+  color:#3e6f9b!important;
+  background:#eaf2fb!important;
+  border-color:#d4e2f2!important;
+}
+
+.f-activity-icon.warning{
+  color:#a86f1f!important;
+  background:#fcf4df!important;
+  border-color:#eadfbf!important;
+}
+
+.f-activity-body{
+  min-width:0!important;
+  display:grid!important;
+  gap:3px!important;
+}
+
+.f-activity-body strong{
+  color:#213d35!important;
+  font-size:10px!important;
+  font-weight:800!important;
+}
+
+.f-activity-body small{
+  color:#7b8983!important;
+  font-size:8px!important;
+  line-height:1.4!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+.f-activity-body em{
+  color:#a0aaa5!important;
+  font-size:7px!important;
+  font-style:normal!important;
+}
+
+.f-activity-amount{
+  color:#23483e!important;
+  font-size:9px!important;
+  font-weight:850!important;
+  white-space:nowrap!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+@media(max-width:1100px){
+  .f-chart-live-area{
+    height:250px!important;
+  }
+}
+
+@media(max-width:780px){
+  .f-chart-live-area{
+    height:230px!important;
+  }
+
+  .f-chart-tooltip{
+    width:160px!important;
+  }
+
+  .f-activity-item{
+    grid-template-columns:32px minmax(0,1fr)!important;
+  }
+
+  .f-activity-amount{
+    grid-column:2!important;
+    justify-self:start!important;
+    margin-top:-1px!important;
+  }
+
+  .f-activity-body small{
+    white-space:normal!important;
+  }
+}
