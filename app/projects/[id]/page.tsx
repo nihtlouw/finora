@@ -27,7 +27,20 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
  const projectExpenses=p.expenses.map((expense)=>({id:expense.id,category:expense.category,amount:Number(expense.amount),expenseDate:expense.expenseDate.toISOString(),status:expense.status,payeeName:expense.payeeName,vendor:expense.vendor}));
  return <FinoraShell workspaceName={c.workspace.name} role={c.user.role} title="Detail Project"><div className="f-content f-detail-page">
   <PageHeader eyebrow="WORKSPACE / PROJECT" title="Detail Project" description={`${p.projectName} · ${p.client.name}. Project dibentuk dari quotation yang disetujui dan Customer PO.`} action={<div className="f-actions"><Link className="f-btn" href="/projects">← Kembali</Link></div>} />
-  <div className="f-detail-hero">\n    <div className="f-detail-identity">\n      <div className="f-project-mark" aria-hidden="true">PRJ</div>\n      <div>\n        <div className="f-eyebrow">PROJECT WORKSPACE</div>\n        <h2>{p.projectCode}</h2>\n        <p>{p.projectName} · {p.client.name}{p.location ? ` · ${p.location}` : ''}</p>\n      </div>\n    </div>\n    <div className="f-detail-actions">\n      <Badge tone={p.status==='ACTIVE'||p.status==='COMPLETED'?'green':p.status==='CANCELLED'?'red':'amber'}>{p.status}</Badge>\n      <ProjectStatusControl projectId={p.id} status={p.status}/>\n    </div>\n  </div>
+  <div className="f-detail-hero">
+    <div className="f-detail-identity">
+      <div className="f-project-mark" aria-hidden="true">PRJ</div>
+      <div>
+        <div className="f-eyebrow">PROJECT WORKSPACE</div>
+        <h2>{p.projectCode}</h2>
+        <p>{p.projectName} · {p.client.name}{p.location ? ` · ${p.location}` : ''}</p>
+      </div>
+    </div>
+    <div className="f-detail-actions">
+      <Badge tone={p.status==='ACTIVE'||p.status==='COMPLETED'?'green':p.status==='CANCELLED'?'red':'amber'}>{p.status}</Badge>
+      <ProjectStatusControl projectId={p.id} status={p.status}/>
+    </div>
+  </div>
   {p.customerPO && Math.abs(Number(p.customerPO.grandTotal)-Number(p.contractValue)) > 0.009 && <div className="f-inline-alert warning f-project-value-warning"><strong>Nilai project perlu sinkronisasi.</strong> Nilai kontrak project berbeda dari Grand Total PO. Project: {money(Number(p.contractValue))} · PO: {money(Number(p.customerPO.grandTotal))}.</div>}
   <div className="f-grid-4 f-detail-kpis f-project-financial-kpis">
     <StatCard label="Contract value (PO)" value={money(contractValue)} icon="Rp"/>
