@@ -188,11 +188,11 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
                 <span>{money(Number(x.amount))}</span>
                 {x.dueDate&&<span>Jatuh tempo {new Date(x.dueDate).toLocaleDateString('id-ID')}</span>}
                 {x.billingMilestone&&<span>Billing #{x.billingMilestone.sequence}: {x.billingMilestone.name}</span>}
+                {x.actual&&<span>Collected {money(x.actual.paidAmount)} · Sisa {money(x.actual.outstandingAmount)}</span>}
               </div>
             </div>
             <div className="f-milestone-row-actions">
               <Badge tone={tone(x.displayStatus||x.status)}>{x.displayStatus||x.status}</Badge>
-              {x.actual&&<span className="f-muted">Collected {money(x.actual.paidAmount)} · Sisa {money(x.actual.outstandingAmount)}</span>}
               {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn soft" disabled={busy} onClick={()=>setStatus('payment',x.id,'DUE')}>Jatuh tempo</button>}
               {can&&(x.displayStatus||x.status)==='PLANNED'&&<button className="f-btn" disabled={busy} onClick={()=>remove('payment',x.id)}>Hapus</button>}
             </div>
