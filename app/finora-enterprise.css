@@ -1996,3 +1996,123 @@ body{
     flex:1 1 0!important;
   }
 }
+
+/* Proposal → PO → Project commercial handover */
+.f-proposal-action-stack{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:7px!important;
+  min-width:240px!important;
+}
+
+.f-proposal-action-stack>.f-actions{
+  display:flex!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+}
+
+.f-proposal-status-stack{
+  display:grid!important;
+  gap:4px!important;
+}
+
+.f-status-sub{
+  color:#7b8983!important;
+  font-size:8px!important;
+  line-height:1.3!important;
+}
+
+.f-commercial-handover{
+  display:grid!important;
+  gap:7px!important;
+  padding:8px 9px!important;
+  border:1px solid #d7e3de!important;
+  border-radius:8px!important;
+  background:#f6faf7!important;
+}
+
+.f-commercial-handover-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+}
+
+.f-commercial-handover-head strong{
+  color:#24453c!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  letter-spacing:.06em!important;
+  text-transform:uppercase!important;
+}
+
+.f-commercial-handover-head span{
+  color:#76857f!important;
+  font-size:8px!important;
+  text-align:right!important;
+}
+
+.f-commercial-handover-steps{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:4px!important;
+}
+
+.f-commercial-handover-steps span{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:24px!important;
+  padding:0 4px!important;
+  border:1px solid #d8e2dd!important;
+  border-radius:6px!important;
+  background:#edf2ef!important;
+  color:#8b9691!important;
+  font-size:7px!important;
+  font-weight:800!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+}
+
+.f-commercial-handover-steps span.done{
+  border-color:#c5e2d6!important;
+  background:#e4f3eb!important;
+  color:#0b685b!important;
+}
+
+.f-commercial-handover-action{
+  display:flex!important;
+  justify-content:flex-end!important;
+}
+
+.f-commercial-handover-action .f-btn{
+  min-height:28px!important;
+  padding:5px 9px!important;
+  font-size:8px!important;
+}
+
+@media(max-width:850px){
+  .f-proposal-action-stack{
+    min-width:200px!important;
+  }
+
+  .f-commercial-handover-steps span{
+    white-space:normal!important;
+  }
+}
+
+@media(max-width:650px){
+  .f-commercial-handover{
+    min-width:210px!important;
+  }
+
+  .f-commercial-handover-steps{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .f-commercial-handover-head{
+    align-items:flex-start!important;
+    flex-direction:column!important;
+  }
+}
