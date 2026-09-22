@@ -16,16 +16,20 @@ export default async function DashboardPage() {
    orderBy:{dueDate:'asc'},
    take:8
  })
+ const sixMonthsStart=new Date()
+ sixMonthsStart.setDate(1)
+ sixMonthsStart.setMonth(sixMonthsStart.getMonth()-5)
+
  const payments=await prisma.payment.findMany({
-   where:{invoice:{clientId:{in:clientIds}}},
+   where:{invoice:{clientId:{in:clientIds}},paymentDate:{gte:sixMonthsStart}},
    select:{amount:true,paymentDate:true,method:true,createdAt:true,invoice:{select:{invoiceNumber:true,client:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}}}},
    orderBy:{paymentDate:'asc'}
  })
  const expenses=await prisma.expense.findMany({
-   where:{workspaceId:context.workspace.id,status:'APPROVED'},
+   where:{workspaceId:context.workspace.id,status:'APPROVED',expenseDate:{gte:sixMonthsStart}},
    select:{amount:true,expenseDate:true,paymentMethod:true,category:true,description:true,createdAt:true,vendor:{select:{name:true}},project:{select:{projectCode:true,projectName:true}}},
    orderBy:{expenseDate:'asc'}
- })
+ )
  const recentPayments=await prisma.payment.findMany({
    where:{invoice:{clientId:{in:clientIds}}},
    include:{invoice:{select:{invoiceNumber:true,client:{select:{name:true}},project:{select:{projectCode:true}}}}},
@@ -48,9 +52,10 @@ export default async function DashboardPage() {
  const expense=expenses.reduce((s,x)=>s+Number(x.amount),0)
  const unpaid=invoices.filter(x=>x.status!=='PAID')
  const receivable=unpaid.reduce((s,x)=>s+Math.max(0,Number(x.totalAmount)-x.payments.reduce((p,y)=>p+Number(y.amount),0)),0)
- const monthBuckets=Array.from({length:6},(_,index)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-(5-index));return {date:d,label:new Intl.DateTimeFormat('id-ID',{month:'short'}).format(d),income:0,expense:0}})
- payments.forEach(x=>{const key=new Date(x.paymentDate);const bucket=monthBuckets.find(b=>b.date.getFullYear()===key.getFullYear()&&b.date.getMonth()===key.getMonth());if(bucket)bucket.income+=Number(x.amount)})
- expenses.forEach(x=>{const key=new Date(x.expenseDate);const bucket=monthBuckets.find(b=>b.date.getFullYear()===key.getFullYear()&&b.date.getMonth()===key.getMonth());if(bucket)bucket.expense+=Number(x.amount)})
+ const cashFlowTransactions=[
+   ...payments.map(x=>({type:'income' as const,date:x.paymentDate.toISOString(),amount:Number(x.amount)})),
+   ...expenses.map(x=>({type:'expense' as const,date:x.expenseDate.toISOString(),amount:Number(x.amount)})),
+ ]
  const formatRelative=(date:Date)=>{
    const diff=Math.max(0,Date.now()-date.getTime())
    const minutes=Math.floor(diff/60000)
@@ -93,14 +98,14 @@ export default async function DashboardPage() {
      sortAt:new Date(x.createdAt).getTime(),
      href:'/invoices',
    }))
- ].sort((a,b)=>b.sortAt-a.sortAt).slice(0,8)
+ ].sort((a,b)=>b.sortAt-a.sortAt).slice(0,5)
   return <FinoraShell workspaceName={context.workspace.name} role={context.user.role} title="Dashboard"><div className="f-content">
   <div className="f-pagehead"><div><div className="f-eyebrow">Overview</div><h1>Selamat datang, {context.user.name?.split(' ')[0]||'Pengguna'}!</h1><p>Kelola arus kas, tagihan, dan kesehatan finansial bisnis Anda dari satu tempat.</p></div><div className="f-actions"><a className="f-btn" href="/reports">Lihat laporan</a><a className="f-btn primary" href="/proposals">+ Buat proposal</a></div></div>
   <div className="f-grid-4">
    <StatCard label="Total pemasukan" value={money(income)} trend="Pembayaran masuk" icon="↗"/><StatCard label="Total pengeluaran" value={money(expense)} trend="Biaya tercatat" icon="↘"/><StatCard label="Piutang aktif" value={money(receivable)} trend={`${unpaid.length} invoice`} icon="◫"/><StatCard label="Arus kas bersih" value={money(income-expense)} trend="Income - Expense" icon="◎"/>
   </div><div style={{height:16}}/>
-  <div className="f-kpi-row"><section className="f-card dashboard-cashflow-card"><div className="f-card-head"><div><h3>Arus Kas</h3><p>6 bulan terakhir · pembayaran masuk dan biaya yang disetujui.</p></div><span className="f-badge green"><i className="f-live-dot"/>Live dari database</span></div><CashFlowChart data={monthBuckets.map(b=>({label:b.label,income:b.income,expense:b.expense}))}/></section>
-  <section className="f-card dashboard-activity-card"><div className="f-card-head"><div><h3>Aktivitas Terbaru</h3><p>Pembayaran, pengeluaran, dan perubahan invoice terbaru.</p></div><span className="f-badge neutral">{activities.length} aktivitas</span></div><div className="f-activity-feed">{activities.length?activities.map(x=><a className="f-activity-item" key={x.id} href={x.href}><span className={`f-activity-icon ${x.kind}`} aria-hidden="true">{x.kind==='payment'?'↗':x.kind==='expense'?'−':x.kind==='warning'?'!':'▤'}</span><span className="f-activity-body"><strong>{x.title}</strong><small>{x.detail}</small><em>{x.when}</em></span><span className="f-activity-amount">{x.amount}</span></a>):<div className="f-empty">Belum ada aktivitas.</div>}</div></section></div>
+  <div className="f-kpi-row"><section className="f-card dashboard-cashflow-card"><div className="f-card-head"><div><h3>Arus Kas</h3><p>Pilih periode untuk melihat pergerakan kas secara detail.</p></div><span className="f-badge green"><i className="f-live-dot"/>Live dari database</span></div><CashFlowChart transactions={cashFlowTransactions}/></section>
+  <section className="f-card dashboard-activity-card"><div className="f-card-head"><div><h3>Aktivitas Terbaru</h3><p>Pembayaran, pengeluaran, dan perubahan invoice terbaru.</p></div><span className="f-badge neutral">5 aktivitas</span></div><div className="f-activity-feed">{activities.length?activities.map(x=><a className="f-activity-item" key={x.id} href={x.href}><span className={`f-activity-icon ${x.kind}`} aria-hidden="true">{x.kind==='payment'?'↗':x.kind==='expense'?'−':x.kind==='warning'?'!':'▤'}</span><span className="f-activity-body"><strong>{x.title}</strong><small>{x.detail}</small><em>{x.when}</em></span><span className="f-activity-amount">{x.amount}</span></a>):<div className="f-empty">Belum ada aktivitas.</div>}</div></section></div>
   <div style={{height:16}}/><section className="f-card"><div className="f-card-head"><div><h3>Invoice yang perlu perhatian</h3><p>Prioritas untuk follow-up penagihan.</p></div><a className="f-btn soft" href="/invoices">Semua invoice</a></div>{unpaid.length?<div style={{overflowX:'auto'}}><table className="f-table"><thead><tr><th>Invoice</th><th>Klien</th><th>Jatuh tempo</th><th>Total</th><th>Status</th></tr></thead><tbody>{unpaid.slice(0,6).map(i=><tr key={i.id}><td><strong>{i.invoiceNumber}</strong></td><td>{i.client.name}</td><td>{new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(i.dueDate)}</td><td className="f-number">{money(Number(i.totalAmount))}</td><td><Badge tone={i.status==='OVERDUE'?'red':'amber'}>{i.status}</Badge></td></tr>)}</tbody></table></div>:<div className="f-empty"><strong>Belum ada invoice</strong>Buat proposal atau invoice manual untuk memulai.</div>}</section>
   <div className="f-footer">© 2026 Finora · Keuangan yang terkelola dengan baik membawa bisnis Anda lebih jauh.</div>
  </div></FinoraShell>
