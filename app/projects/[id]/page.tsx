@@ -40,9 +40,9 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
     <a href="#project-information">Overview</a>
     <a href="#profitability-project">Profitability</a>
     <a href="#boq-project">BOQ</a>
+    <a href="#expenses-project">Expenses</a>
     <a href="#execution-project">Execution</a>
     <a href="#billing-payment">Billing &amp; payment</a>
-    <a href="#expenses-project">Expenses</a>
     <a href="#documents-project">Documents</a>
   </nav>
 
