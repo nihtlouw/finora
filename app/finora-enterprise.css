@@ -3172,3 +3172,176 @@ body{
   }
 }
 
+
+/* ========================================================================
+   Reconciled UI refinements
+   Keep current main responsive system; add only surfaces introduced by
+   the stale PR and avoid re-importing the conflicting duplicate CSS block.
+   ======================================================================== */
+
+.f-proposal-next-step{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  min-width:220px!important;
+  padding:7px 8px!important;
+  border:1px solid #d9e4df!important;
+  border-radius:8px!important;
+  background:#f7faf8!important;
+}
+.f-proposal-next-step .f-status-sub{
+  min-width:0!important;
+  white-space:normal!important;
+  line-height:1.35!important;
+}
+.f-proposal-next-step .f-btn{
+  min-height:29px!important;
+  padding:5px 9px!important;
+  font-size:8px!important;
+  flex:0 0 auto!important;
+}
+
+@media(max-width:780px){
+  /* Tables newly classified by the resolved branch. */
+  .f-dashboard-invoice-table,
+  .f-enterprise-table,
+  .f-members-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .f-dashboard-invoice-table thead,
+  .f-enterprise-table thead,
+  .f-members-table thead{
+    display:none!important;
+  }
+
+  .f-dashboard-invoice-table tbody,
+  .f-enterprise-table tbody,
+  .f-members-table tbody{
+    display:grid!important;
+    gap:9px!important;
+    padding:9px!important;
+  }
+
+  .f-dashboard-invoice-table tbody tr,
+  .f-enterprise-table tbody tr,
+  .f-members-table tbody tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    padding:10px 11px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:10px!important;
+    background:var(--fe-surface)!important;
+  }
+
+  .f-dashboard-invoice-table td,
+  .f-enterprise-table td,
+  .f-members-table td{
+    display:grid!important;
+    grid-template-columns:94px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    min-width:0!important;
+    padding:7px 0!important;
+    border:0!important;
+    background:transparent!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  .f-dashboard-invoice-table td::before,
+  .f-enterprise-table td::before,
+  .f-members-table td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    letter-spacing:.05em!important;
+    text-transform:uppercase!important;
+  }
+
+  .f-dashboard-invoice-table td:nth-child(1)::before{content:'Invoice';}
+  .f-dashboard-invoice-table td:nth-child(2)::before{content:'Klien';}
+  .f-dashboard-invoice-table td:nth-child(3)::before{content:'Jatuh tempo';}
+  .f-dashboard-invoice-table td:nth-child(4)::before{content:'Total';}
+  .f-dashboard-invoice-table td:nth-child(5)::before{content:'Status';}
+
+  .f-enterprise-table td:nth-child(1)::before{content:'Identitas';}
+  .f-enterprise-table td:nth-child(2)::before{content:'Status';}
+  .f-enterprise-table td:nth-child(3)::before{content:'Nilai';}
+  .f-enterprise-table td:nth-child(4)::before{content:'Tanggal / Periode';}
+  .f-enterprise-table td:nth-child(5)::before{content:'Aksi';}
+
+  .f-members-table td:nth-child(1)::before{content:'Nama';}
+  .f-members-table td:nth-child(2)::before{content:'Email';}
+  .f-members-table td:nth-child(3)::before{content:'Role';}
+  .f-members-table td:nth-child(4)::before{content:'Aksi';}
+
+  .f-enterprise-table td:last-child,
+  .f-members-table td:last-child{
+    display:block!important;
+    padding-top:9px!important;
+    margin-top:2px!important;
+    border-top:1px solid var(--fe-line-soft)!important;
+  }
+
+  .f-enterprise-table td:last-child::before,
+  .f-members-table td:last-child::before{
+    display:block!important;
+    margin-bottom:5px!important;
+  }
+
+  .f-enterprise-table td:last-child>div,
+  .f-members-table td:last-child>div{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    width:100%!important;
+  }
+
+  .f-enterprise-table td:last-child .f-btn,
+  .f-members-table td:last-child .f-btn{
+    flex:1 1 120px!important;
+  }
+
+  .f-proposal-next-step{
+    align-items:stretch!important;
+    flex-direction:column!important;
+    min-width:0!important;
+  }
+  .f-proposal-next-step .f-btn{
+    width:100%!important;
+  }
+
+  .f-project-create-drawer,
+  .f-project-document-drawer{
+    width:100vw!important;
+    max-width:none!important;
+    height:calc(100dvh - 58px)!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  .f-employee-detail-drawer{
+    width:100vw!important;
+    max-width:none!important;
+    height:calc(100dvh - 58px)!important;
+    border-radius:0!important;
+  }
+}
+
+@media(max-width:520px){
+  .f-dashboard-invoice-table tbody,
+  .f-enterprise-table tbody,
+  .f-members-table tbody{
+    padding:7px!important;
+  }
+  .f-dashboard-invoice-table td,
+  .f-enterprise-table td,
+  .f-members-table td{
+    grid-template-columns:82px minmax(0,1fr)!important;
+  }
+}
+

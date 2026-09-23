@@ -67,7 +67,7 @@ export default function ReceivablesManager() {
     <Card>
       <div className="f-toolbar"><input className="f-input" placeholder="Cari invoice atau klien..." value={q} onChange={e => setQ(e.target.value)} /></div>
       <div style={{ overflowX: 'auto' }}>
-        <table className="f-table f-receivables-table"><thead><tr><th>Invoice</th><th>Klien</th><th>Jatuh tempo</th><th>Umur</th><th>Total</th><th>Outstanding</th><th>Status</th><th>Aksi</th></tr></thead>
+        <table className="f-table f-responsive-table f-receivables-table"><thead><tr><th>Invoice</th><th>Klien</th><th>Jatuh tempo</th><th>Umur</th><th>Total</th><th>Outstanding</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody>{filtered.map(x => <tr key={x.id}>
             <td><strong>{x.invoiceNumber}</strong></td>
             <td>{x.client.name}</td>

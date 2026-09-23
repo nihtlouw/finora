@@ -251,7 +251,7 @@ export default function EmployeeManager({ role }: { role: string }) {
           <div className="f-empty"><strong>Tidak ada karyawan</strong><span>Sesuaikan filter atau buat employee baru.</span></div>
         ) : (
           <div className="f-table-wrap">
-            <table className="f-table f-domain-table f-employee-table">
+            <table className="f-table f-domain-table f-responsive-table f-employee-table">
               <thead>
                 <tr>
                   <th>Employee</th>
@@ -319,7 +319,7 @@ export default function EmployeeManager({ role }: { role: string }) {
 
       {detail && (
         <div className="f-modal-backdrop" onMouseDown={() => setDetail(null)}>
-          <aside className="f-domain-drawer" onMouseDown={(e) => e.stopPropagation()}>
+          <aside className="f-domain-drawer f-employee-detail-drawer" onMouseDown={(e) => e.stopPropagation()}>
             <div className="f-domain-drawer-head">
               <div><div className="f-eyebrow">EMPLOYEE DETAIL</div><h2>{detail.name}</h2><p>{detail.employeeNo} · {detail.position || 'Position belum diisi'}</p></div>
               <button className="f-btn" onClick={() => setDetail(null)}>Tutup</button>
