@@ -3345,3 +3345,90 @@ body{
   }
 }
 
+
+/* Detail/document tables: optimize read-heavy BOQ/document views for phones
+   without changing their desktop presentation. */
+@media(max-width:780px){
+  .f-proposal-detail-table,
+  .f-document-table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+
+  .f-proposal-detail-table thead,
+  .f-document-table thead{
+    display:none!important;
+  }
+
+  .f-proposal-detail-table tbody,
+  .f-document-table tbody{
+    display:grid!important;
+    gap:8px!important;
+    padding:8px!important;
+  }
+
+  .f-proposal-detail-table tbody tr,
+  .f-document-table tbody tr{
+    display:grid!important;
+    gap:0!important;
+    padding:10px!important;
+    border:1px solid var(--fe-line)!important;
+    border-radius:9px!important;
+    background:var(--fe-surface)!important;
+  }
+
+  .f-proposal-detail-table tbody td,
+  .f-document-table tbody td{
+    display:grid!important;
+    grid-template-columns:92px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+    padding:6px 0!important;
+    border:0!important;
+    white-space:normal!important;
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  .f-proposal-detail-table tbody td:nth-child(1)::before{content:"No";}
+  .f-proposal-detail-table tbody td:nth-child(2)::before{content:"Item";}
+  .f-proposal-detail-table tbody td:nth-child(3)::before{content:"Kategori";}
+  .f-proposal-detail-table tbody td:nth-child(4)::before{content:"Brand / Type";}
+  .f-proposal-detail-table tbody td:nth-child(5)::before{content:"Qty";}
+  .f-proposal-detail-table tbody td:nth-child(6)::before{content:"Unit";}
+  .f-proposal-detail-table tbody td:nth-child(7)::before{content:"Harga";}
+  .f-proposal-detail-table tbody td:nth-child(8)::before{content:"Total";}
+
+  .f-document-table tbody td:nth-child(1)::before{content:"Deskripsi";}
+  .f-document-table tbody td:nth-child(2)::before{content:"Qty";}
+  .f-document-table tbody td:nth-child(3)::before{content:"Harga";}
+  .f-document-table tbody td:nth-child(4)::before{content:"Total";}
+
+  .f-proposal-detail-table tbody td::before,
+  .f-document-table tbody td::before{
+    color:#7c8782!important;
+    font-size:8px!important;
+    font-weight:750!important;
+    letter-spacing:.05em!important;
+    text-transform:uppercase!important;
+  }
+
+  .f-proposal-detail-table .f-proposal-spec{
+    margin-top:5px!important;
+  }
+}
+
+@media(max-width:520px){
+  .f-proposal-detail-table tbody,
+  .f-document-table tbody{
+    padding:6px!important;
+  }
+
+  .f-proposal-detail-table tbody td,
+  .f-document-table tbody td{
+    grid-template-columns:78px minmax(0,1fr)!important;
+  }
+}
+
