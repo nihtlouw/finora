@@ -168,6 +168,7 @@ export default function ProjectDocumentsManager({ projectId, role }: Props) {
           {error && <div className="f-inline-alert error">{error}</div>}
           {success && <div className="f-inline-alert success">{success}</div>}
           <SideDrawer
+            className="f-project-document-drawer"
             open={drawerOpen}
             onClose={() => !busy && setDrawerOpen(false)}
             title="Upload project document"
