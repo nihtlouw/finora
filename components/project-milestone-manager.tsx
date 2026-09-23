@@ -202,6 +202,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
         <div className="f-milestone-footnote">Status <strong>PLANNED</strong> dapat ditandai <strong>DUE</strong>. Setelah invoice menerima pembayaran, status akan mengikuti actual collection: <strong>PARTIAL</strong>, <strong>PAID</strong>, atau <strong>OVERDUE</strong>.</div>
       </Card>
       {drawer==='billing'&&<SideDrawer
+        className="f-full-workspace milestone-entry-workspace"
         open
         onClose={()=>!busy&&setDrawer(null)}
         title="Tambah billing milestone"
@@ -243,6 +244,7 @@ export default function ProjectMilestoneManager({projectId,contractValue,role}:P
           </div>
         </form></SideDrawer>}
       {drawer==='payment'&&<SideDrawer
+        className="f-full-workspace milestone-entry-workspace"
         open
         onClose={()=>!busy&&setDrawer(null)}
         title="Tambah payment milestone"

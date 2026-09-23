@@ -118,7 +118,7 @@ export default function CashflowManager({ role, initialRows }: { role: string; i
           <div><h3>Transaksi</h3><p>Payment dan Expense tercatat otomatis; transaksi lain dapat dicatat manual.</p></div>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table className="f-table">
+          <table className="f-table f-cashflow-table">
             <thead><tr><th>Tanggal</th><th>Kategori</th><th>Sumber</th><th>Tipe</th><th>Nominal</th>{canWrite&&<th>Aksi</th>}</tr></thead>
             <tbody>
               {rows.map((x) => (
