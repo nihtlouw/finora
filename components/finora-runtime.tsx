@@ -9,11 +9,26 @@ export type FinoraRuntimeViewer = {
   role: string
 }
 
+type NotificationSummary = {
+  overdueInvoices: number
+  pendingExpenses: number
+}
+
+const EMPTY_NOTIFICATIONS: NotificationSummary = {
+  overdueInvoices: 0,
+  pendingExpenses: 0,
+}
+
 export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer }) {
   const { signOut } = useClerk()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [notificationSummary, setNotificationSummary] =
+    useState<NotificationSummary>(EMPTY_NOTIFICATIONS)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+
+  const isProduction = process.env.NODE_ENV === 'production'
 
   useEffect(() => {
     let cancelled = false
@@ -85,6 +100,46 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
     }
   }, [])
 
+  useEffect(() => {
+    if (!notificationsOpen) return
+
+    let cancelled = false
+    setNotificationsLoading(true)
+
+    Promise.all([
+      fetch('/api/invoices', { cache: 'no-store' }),
+      fetch('/api/expenses', { cache: 'no-store' }),
+    ])
+      .then(async ([invoiceResponse, expenseResponse]) => {
+        const [invoiceData, expenseData] = await Promise.all([
+          invoiceResponse.ok ? invoiceResponse.json() : Promise.resolve({ invoices: [] }),
+          expenseResponse.ok ? expenseResponse.json() : Promise.resolve({ expenses: [] }),
+        ])
+
+        const overdueInvoices = Array.isArray(invoiceData.invoices)
+          ? invoiceData.invoices.filter((item: { status?: string }) => item.status === 'OVERDUE').length
+          : 0
+
+        const pendingExpenses = Array.isArray(expenseData.expenses)
+          ? expenseData.expenses.filter((item: { status?: string }) => item.status === 'PENDING').length
+          : 0
+
+        if (!cancelled) {
+          setNotificationSummary({ overdueInvoices, pendingExpenses })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setNotificationSummary(EMPTY_NOTIFICATIONS)
+      })
+      .finally(() => {
+        if (!cancelled) setNotificationsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [notificationsOpen])
+
   const firstName =
     viewer.name?.trim()?.split(/\s+/)[0] || viewer.email.split('@')[0] || 'Pengguna'
 
@@ -94,16 +149,21 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
 
   function resetDemoData() {
     window.localStorage.removeItem('finora_state')
-    setToast('Data demo direset. Halaman akan dimuat ulang.')
+    setToast('Data browser direset. Halaman akan dimuat ulang.')
     window.setTimeout(() => window.location.reload(), 600)
   }
 
+  const totalNotifications =
+    notificationSummary.overdueInvoices + notificationSummary.pendingExpenses
+
   return (
     <>
-      <div className="finora-preview-chip" aria-label="Mode data">
-        <span className="finora-preview-dot" />
-        Development · Data demo
-      </div>
+      {!isProduction && (
+        <div className="finora-preview-chip" aria-label="Mode data">
+          <span className="finora-preview-dot" />
+          Development · Data demo
+        </div>
+      )}
 
       {userMenuOpen && (
         <div
@@ -123,13 +183,15 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
             <span className="finora-session-dot" />
             Sesi aktif melalui Clerk
           </div>
-          <button className="finora-menu-action" onClick={resetDemoData} type="button">
-            <span>↻</span>
-            <span>
-              <strong>Reset data demo</strong>
-              <small>Kembalikan data browser ke kondisi awal</small>
-            </span>
-          </button>
+          {!isProduction && (
+            <button className="finora-menu-action" onClick={resetDemoData} type="button">
+              <span>↻</span>
+              <span>
+                <strong>Reset data demo</strong>
+                <small>Kembalikan data browser ke kondisi awal</small>
+              </span>
+            </button>
+          )}
           <button className="finora-menu-action danger" onClick={handleSignOut} type="button">
             <span>↪</span>
             <span>
@@ -150,31 +212,50 @@ export default function FinoraRuntime({ viewer }: { viewer: FinoraRuntimeViewer 
           <div className="finora-notification-head">
             <div>
               <strong>Notifikasi</strong>
-              <span>Prioritas yang perlu ditinjau</span>
+              <span>Prioritas berdasarkan data workspace</span>
             </div>
-            <span className="finora-count-pill">3</span>
+            {totalNotifications > 0 && (
+              <span className="finora-count-pill">{totalNotifications > 9 ? '9+' : totalNotifications}</span>
+            )}
           </div>
-          <div className="finora-notification-item">
-            <span className="finora-notification-icon warning">!</span>
-            <div>
-              <strong>2 invoice perlu follow-up</strong>
-              <span>INV-0267 dan INV-0265</span>
+
+          {notificationsLoading ? (
+            <div className="finora-notification-item">
+              <div>
+                <strong>Memuat notifikasi…</strong>
+                <span>Memeriksa invoice overdue dan biaya pending.</span>
+              </div>
             </div>
-          </div>
-          <div className="finora-notification-item">
-            <span className="finora-notification-icon approval">✓</span>
-            <div>
-              <strong>1 biaya menunggu approval</strong>
-              <span>Marketing · Rp 8,2 jt</span>
+          ) : totalNotifications === 0 ? (
+            <div className="finora-notification-item">
+              <span className="finora-notification-icon info">i</span>
+              <div>
+                <strong>Tidak ada prioritas aktif</strong>
+                <span>Tidak ada invoice overdue atau biaya menunggu approval.</span>
+              </div>
             </div>
-          </div>
-          <div className="finora-notification-item">
-            <span className="finora-notification-icon info">i</span>
-            <div>
-              <strong>Payment gateway belum terhubung</strong>
-              <span>Hubungkan setelah core finance stabil</span>
-            </div>
-          </div>
+          ) : (
+            <>
+              {notificationSummary.overdueInvoices > 0 && (
+                <div className="finora-notification-item">
+                  <span className="finora-notification-icon warning">!</span>
+                  <div>
+                    <strong>{notificationSummary.overdueInvoices} invoice overdue</strong>
+                    <span>Perlu ditindaklanjuti dari modul Piutang.</span>
+                  </div>
+                </div>
+              )}
+              {notificationSummary.pendingExpenses > 0 && (
+                <div className="finora-notification-item">
+                  <span className="finora-notification-icon approval">✓</span>
+                  <div>
+                    <strong>{notificationSummary.pendingExpenses} biaya menunggu approval</strong>
+                    <span>Review dari modul Biaya sebelum settlement.</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
