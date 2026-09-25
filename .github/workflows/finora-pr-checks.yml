@@ -6,6 +6,7 @@ on:
       - main
   push:
     branches:
+      - main
       - feat/ux-systematic-optimization
 
 jobs:
@@ -28,6 +29,8 @@ jobs:
         run: npm run db:generate
       - name: TypeScript
         run: npx tsc --noEmit
+      - name: Transition contract QA
+        run: npm run qa:transition-matrix
       - name: Production build
         run: npm run build
       - name: ESLint (informational)
